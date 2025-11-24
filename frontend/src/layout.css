@@ -1,0 +1,388 @@
+/* ===== APP LAYOUT ===== */
+
+.app-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 16px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  margin-bottom: 10px;
+  flex: 0 0 auto;
+}
+
+.app-content {
+  flex: 1 1 auto;
+  min-height: 0; /* fondamentale per evitare che sbordi in basso */
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1.6fr) minmax(0, 1.3fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* Sidebar filtri + pannello dettaglio */
+
+.sidebar-panel,
+.detail-panel {
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 12px 14px 16px;
+  color: #fff;
+  min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  color: #ffd86b;
+  opacity: 0.9;
+}
+
+.sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-item {
+font-size: 0.85rem;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-item.active {
+  background: rgba(255, 216, 107, 0.18);
+  color: #ffd86b;
+}
+
+.sidebar-section-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 8px 0 6px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Area centrale (lista messaggi) */
+
+.message-area {
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== LISTE PERSONALIZZATE (SIDEBAR) ===== */
+
+.custom-lists-container {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.custom-lists-scroll {
+  max-height: 160px;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.custom-list-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.custom-list-pill {
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+
+  /* niente bordo, niente colore speciale di default */
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  text-align: left;
+}
+
+/* hover come i filtri */
+.custom-list-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* attiva come i filtri attivi */
+.custom-list-pill.active {
+  background: rgba(255, 216, 107, 0.18);
+  color: #ffd86b;
+}
+
+.custom-list-icon-btn {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0 2px;
+}
+
+.custom-list-new {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+}
+
+.custom-list-new input {
+  flex: 1 1 auto;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 2px 6px;
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+.custom-list-new-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.custom-list-new-actions button {
+  flex: 0 0 auto;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.custom-lists-add-btn {
+  margin-top: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 140, 0.6);
+  background: rgba(0, 255, 140, 0.18);
+  color: #b4ffe0;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  text-align: center;
+}
+
+/* ===== LANGUAGE SELECTOR (HEADER) ===== */
+
+.language-selector {
+  position: absolute;
+  left: 20px;
+  top: 18px;
+  display: flex;
+  flex-direction: column;   /* 👈 colonna */
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: #ffd86b;
+  opacity: 0.9;
+}
+
+/* nuova riga solo per label + select */
+.language-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.language-select {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  outline: none;
+}
+
+.language-select:hover {
+  border-color: rgba(255, 216, 107, 0.8);
+}
+
+
+/* ===== CONTACTS BUTTON / POPUP ===== */
+
+.contacts-btn {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffd86b;
+  font-size: 0.78rem;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+.contacts-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* popup fluisce SOTTO il bottone, niente posizionamento assoluto */
+.contacts-popup {
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(10, 10, 25, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+  font-size: 0.8rem;
+  color: #f5f1ff;
+  min-width: 210px;
+  z-index: 50;
+}
+
+.contacts-row {
+  margin-bottom: 4px;
+}
+
+.contacts-row:last-child {
+  margin-bottom: 0;
+}
+
+.contacts-row-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.contacts-link {
+  color: #ffd86b;
+  text-decoration: none;
+}
+
+.contacts-link:hover {
+  text-decoration: underline;
+}
+
+.contacts-icon {
+  margin-left: 4px;
+  font-size: 0.9rem;
+}
+
+/* === MODAL OVERLAY === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* === MODAL BOX === */
+.modal-box {
+  background: rgba(10,10,25,0.98);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 12px;
+  padding: 18px 22px;
+  min-width: 280px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.7);
+  position: relative;
+  color: #f5f1ff;
+  animation: fadeInScale 0.15s ease-out;
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* === CLOSE BUTTON === */
+.modal-close {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  border: none;
+  background: none;
+  color: #ffd86b;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* TEXTS */
+.modal-title {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffd86b;
+}
+
+.modal-item {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.modal-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.modal-link {
+  color: #ffd86b;
+  text-decoration: none;
+}
+
+.modal-link:hover {
+  text-decoration: underline;
+}
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 1024px) {
+  .app-shell {
+    height: auto;
+  }
+
+  .app-content {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-panel,
+  .detail-panel {
+    min-height: auto;
+    height: auto;
+  }
+
+  .message-list-scroll {
+    height: auto;
+    max-height: 60vh;
+  }
+
+  .detail-thread {
+    max-height: 40vh;
+  }
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hermes - Pannello</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 10px;
+        min-width: 280px;
+      }
+
+      button {
+        padding: 6px 8px;
+        cursor: pointer;
+      }
+
+      #status {
+        margin-top: 10px;
+        font-size: 0.9em;
+      }
+
+      .section-title {
+        margin-top: 10px;
+        font-size: 0.9em;
+        font-weight: bold;
+      }
+
+      .lang-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        font-size: 0.85em;
+      }
+
+      .lang-row select {
+        flex: 0 0 auto;
+      }
+
+      .full-width-btn {
+        display: block;
+        width: 100%;
+        margin: 6px 0;
+      }
+
+      .smart-reply-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 4px;
+      }
+
+      .smart-row {
+        display: flex;
+        gap: 4px;
+      }
+
+      .smart-row button.main-btn {
+        flex: 1 1 auto;
+      }
+
+      .smart-row button.edit-btn {
+        flex: 0 0 auto;
+        width: 32px;
+        font-size: 0.85em;
+      }
+    </style>
+  </head>
+  <body>
+    <h3 id="title"></h3>
+
+    <div class="lang-row">
+      <span id="lang-label"></span>
+      <select id="lang-select">
+        <option value="it">Italiano</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+
+    <button id="import-sidebar" class="full-width-btn"></button>
+    <button id="import-thread" class="full-width-btn"></button>
+
+    <div class="section-title" id="smart-section-title"></div>
+    <div class="smart-reply-buttons">
+      <div class="smart-row">
+        <button id="smart-decline" class="main-btn"></button>
+        <button id="smart-decline-edit" class="edit-btn">✎</button>
+      </div>
+      <div class="smart-row">
+        <button id="smart-interested" class="main-btn"></button>
+        <button id="smart-interested-edit" class="edit-btn">✎</button>
+      </div>
+      <div class="smart-row">
+        <button id="smart-more-info" class="main-btn"></button>
+        <button id="smart-more-info-edit" class="edit-btn">✎</button>
+      </div>
+    </div>
+
+    <div id="status"></div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

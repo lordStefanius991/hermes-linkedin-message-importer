@@ -1,0 +1,50 @@
+/* ===== GLOBAL STYLE HERMES: BASE ===== */
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+
+  /* Gradient Hermes (blu → viola) */
+  background: linear-gradient(135deg, #1a1f3b 0%, #302b63 50%, #52307c 100%);
+  color: #fff;
+}
+
+/* Pattern geometrico leggero */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px, 80px 80px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ----- Caduceo Hermes ----- */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("./assets/hermes.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 50%;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Content above background layers */
+#root {
+  position: relative;
+  z-index: 5;
+}

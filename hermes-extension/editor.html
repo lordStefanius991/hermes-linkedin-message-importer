@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hermes - Modifica risposta</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 10px;
+        min-width: 360px;
+      }
+
+      h3 {
+        margin-top: 0;
+      }
+
+      #info {
+        font-size: 0.85em;
+        margin-bottom: 8px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 220px;
+        font-family: inherit;
+        font-size: 0.9em;
+        box-sizing: border-box;
+      }
+
+      .btn-row {
+        margin-top: 8px;
+        display: flex;
+        gap: 6px;
+      }
+
+      .btn-row button {
+        flex: 1 1 auto;
+        padding: 6px 8px;
+        cursor: pointer;
+      }
+
+      #status {
+        margin-top: 8px;
+        font-size: 0.85em;
+      }
+    </style>
+  </head>
+  <body>
+    <h3 id="editor-title"></h3>
+    <div id="info"></div>
+
+    <textarea id="template-text"></textarea>
+
+    <div class="btn-row">
+      <button id="save-btn"></button>
+      <button id="reset-btn"></button>
+      <button id="close-btn"></button>
+    </div>
+
+    <div id="status"></div>
+
+    <script src="editor.js"></script>
+  </body>
+</html>
