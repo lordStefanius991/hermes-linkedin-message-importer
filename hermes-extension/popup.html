@@ -1,97 +1,111 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
   <head>
     <meta charset="UTF-8" />
+    <title>Hermes</title>
     <style>
       body {
-        width: 300px;
-        padding: 10px;
-        background: #111;
-        color: #fff;
         font-family: sans-serif;
-        font-size: 14px;
+        margin: 10px;
+        min-width: 280px;
       }
 
       button {
-        width: 100%;
-        padding: 6px 0;
-        margin-bottom: 6px;
-        border: none;
-        border-radius: 4px;
+        padding: 6px 8px;
         cursor: pointer;
-        background: #ffd86b;
-        font-weight: bold;
-        color: #000;
       }
 
       #status {
-        margin-top: 8px;
-        font-size: 0.8rem;
-        opacity: 0.75;
-        min-height: 18px;
+        margin-top: 10px;
+        font-size: 0.9em;
       }
 
-      #hermes-footer {
-        margin-top: 12px;
-        font-size: 0.7rem;
-        text-align: center;
-        opacity: 0.6;
-        user-select: none;
-      }
-
-      .smart-section {
-        margin-top: 12px;
-        padding-top: 6px;
-        border-top: 1px solid #444;
-      }
-
-      .smart-buttons button {
-        margin-bottom: 4px;
+      .section-title {
+        margin-top: 10px;
+        font-size: 0.9em;
+        font-weight: bold;
       }
 
       .lang-row {
-        margin-bottom: 8px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        font-size: 0.85em;
       }
 
-      select {
-        background: #222;
-        color: #fff;
-        border: 1px solid #444;
-        border-radius: 4px;
+      .lang-row select {
+        flex: 0 0 auto;
+      }
+
+      .full-width-btn {
+        display: block;
+        width: 100%;
+        margin: 6px 0;
+      }
+
+      .smart-reply-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 4px;
+      }
+
+      .smart-row {
+        display: flex;
+        gap: 4px;
+      }
+
+      .smart-row button.main-btn {
+        flex: 1 1 auto;
+      }
+
+      .smart-row button.edit-btn {
+        flex: 0 0 auto;
+        width: 32px;
+        font-size: 0.85em;
       }
     </style>
   </head>
-
   <body>
-    <h2 id="title">Hermes</h2>
+    <h3 id="title"></h3>
 
     <div class="lang-row">
-      <span id="lang-label">Language</span>
+      <span id="lang-label"></span>
       <select id="lang-select">
-        <option value="en">EN</option>
-        <option value="it">IT</option>
+        <option value="it">Italiano</option>
+        <option value="en">English</option>
       </select>
     </div>
 
-    <button id="import-sidebar">Import sidebar</button>
-    <button id="import-thread">Import current thread</button>
-    <button id="open-panel">Open pinned panel</button>
+    <button id="import-sidebar" class="full-width-btn"></button>
+    <button id="import-thread" class="full-width-btn"></button>
+    <button id="open-panel" class="full-width-btn"></button>
 
-    <div class="smart-section">
-      <strong id="smart-section-title">Smart reply (clipboard)</strong>
-      <div class="smart-buttons">
-        <button id="smart-decline">Polite decline</button>
-        <button id="smart-interested">Interested</button>
-        <button id="smart-more-info">Ask for more info</button>
+    <div class="section-title" id="smart-section-title"></div>
+    <div class="smart-reply-buttons">
+      <div class="smart-row">
+        <button id="smart-decline" class="main-btn"></button>
+        <button id="smart-decline-edit" class="edit-btn">✎</button>
+      </div>
+      <div class="smart-row">
+        <button id="smart-interested" class="main-btn"></button>
+        <button id="smart-interested-edit" class="edit-btn">✎</button>
+      </div>
+      <div class="smart-row">
+        <button id="smart-more-info" class="main-btn"></button>
+        <button id="smart-more-info-edit" class="edit-btn">✎</button>
       </div>
     </div>
 
     <div id="status"></div>
-
-    <div id="hermes-footer"></div>
+        <div id="hermes-footer" style="
+      margin-top: 8px;
+      font-size: 0.7rem;
+      text-align: center;
+      opacity: 0.6;
+      user-select: none;
+    "></div>
 
     <script src="popup.js"></script>
   </body>
