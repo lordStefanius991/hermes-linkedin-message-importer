@@ -55,7 +55,11 @@
       {
         "from": "../backend/target/",
         "to": "backend/"
-      }
+      },
+    {
+      "from": "runtime-hermes",
+      "to": "runtime-hermes"
+    }
     ],
     "win": {
       "target": "nsis"
