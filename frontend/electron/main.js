@@ -51,7 +51,9 @@ function getBackendJarPath() {
 }
 
 /**
- * Avvia il backend Spring Boot come processo separato (java -jar ...)
+ * Avvia il backend Spring Boot come processo separato.
+ * - In dev: usa "java" dal sistema
+ * - In produzione: usa la runtime locale "runtime-hermes/bin/java(.exe)"
  */
 function startBackend() {
   const jarPath = getBackendJarPath();
@@ -62,9 +64,29 @@ function startBackend() {
     return;
   }
 
-  console.log('[Hermes][BACKEND] Avvio backend con "java -jar", path:', jarPath);
+  // Se siamo in produzione, usiamo la mini-JVM locale
+  let javaCmd = 'java';
 
-  backendProcess = spawn('java', ['-jar', jarPath], {
+  if (!isDev) {
+    const runtimeBin = path.join(
+      process.resourcesPath,
+      'runtime-hermes',
+      'bin'
+    );
+
+    javaCmd =
+      process.platform === 'win32'
+        ? path.join(runtimeBin, 'java.exe')
+        : path.join(runtimeBin, 'java');
+
+    console.log('[Hermes][BACKEND] Uso JVM embedded:', javaCmd);
+  } else {
+    console.log('[Hermes][BACKEND] Uso JVM di sistema: java');
+  }
+
+  console.log('[Hermes][BACKEND] Avvio backend:', javaCmd, '-jar', jarPath);
+
+  backendProcess = spawn(javaCmd, ['-jar', jarPath], {
     cwd: path.dirname(jarPath),
     stdio: 'inherit',
   });
@@ -113,24 +135,24 @@ function createWindow() {
   }
 
   // Blocca l'apertura interna dei link esterni
-const { shell } = require('electron');
+  const { shell } = require('electron');
 
-mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-  // Se l'URL NON è locale, apri nel browser
-  if (!url.startsWith('file://') && !url.startsWith('http://localhost')) {
-    shell.openExternal(url);
-    return { action: 'deny' };
-  }
-  return { action: 'allow' }; 
-});
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Se l'URL NON è locale, apri nel browser
+    if (!url.startsWith('file://') && !url.startsWith('http://localhost')) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
 
-// Intercetta anche clic normali (non solo target="_blank")
-mainWindow.webContents.on('will-navigate', (event, url) => {
-  if (!url.startsWith('file://') && !url.startsWith('http://localhost')) {
-    event.preventDefault();
-    shell.openExternal(url);
-  }
-});
+  // Intercetta anche clic normali (non solo target="_blank")
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('file://') && !url.startsWith('http://localhost')) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
+  });
 
   // DevTools aperti (puoi commentare questa riga quando non ti servono più)
   mainWindow.webContents.openDevTools();
