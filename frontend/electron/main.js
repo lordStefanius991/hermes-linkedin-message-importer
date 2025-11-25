@@ -121,7 +121,7 @@ mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   }
-  return { action: 'allow' };
+  return { action: 'allow' }; 
 });
 
 // Intercetta anche clic normali (non solo target="_blank")
