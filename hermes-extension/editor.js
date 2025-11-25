@@ -33,7 +33,7 @@ const I18N = {
       more_info: 'Chiedi più info',
     },
     info:
-      "Qui modifichi il corpo del messaggio.\n\nHermes genererà la risposta completa come:\n\nCiao {nome},\n\n[questo testo]\n\nUn saluto,\nStefano",
+      "Qui modifichi il corpo del messaggio.\n\nHermes genererà la risposta completa come:\n\nCiao {nome},\n\n[questo testo]\n\nUn saluto,\n",
     save: 'Salva',
     reset: 'Ripristina default',
     close: 'Chiudi',
@@ -48,7 +48,7 @@ const I18N = {
       more_info: 'Ask for more info',
     },
     info:
-      "Here you edit the body of the message.\n\nHermes will generate the full reply as:\n\nHi {name},\n\n[this text]\n\nBest regards,\nStefano",
+      "Here you edit the body of the message.\n\nHermes will generate the full reply as:\n\nHi {name},\n\n[this text]\n\nBest regards,\n",
     save: 'Save',
     reset: 'Reset to default',
     close: 'Close',

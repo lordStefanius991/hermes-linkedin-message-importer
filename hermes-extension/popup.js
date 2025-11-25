@@ -151,10 +151,10 @@ function buildSmartReply(mode, interlocutorName) {
   const body = getBodyFor(lang, mode);
 
   if (lang === 'it') {
-    const closing = 'Un saluto,\nStefano';
+    const closing = 'Un saluto,\n';
     return `Ciao ${firstName},\n\n${body}\n\n${closing}`;
   } else {
-    const closing = 'Best regards,\nStefano';
+    const closing = 'Best regards,\n';
     return `Hi ${firstName},\n\n${body}\n\n${closing}`;
   }
 }
