@@ -112,6 +112,26 @@ function createWindow() {
       });
   }
 
+  // Blocca l'apertura interna dei link esterni
+const { shell } = require('electron');
+
+mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+  // Se l'URL NON è locale, apri nel browser
+  if (!url.startsWith('file://') && !url.startsWith('http://localhost')) {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  }
+  return { action: 'allow' };
+});
+
+// Intercetta anche clic normali (non solo target="_blank")
+mainWindow.webContents.on('will-navigate', (event, url) => {
+  if (!url.startsWith('file://') && !url.startsWith('http://localhost')) {
+    event.preventDefault();
+    shell.openExternal(url);
+  }
+});
+
   // DevTools aperti (puoi commentare questa riga quando non ti servono più)
   mainWindow.webContents.openDevTools();
 
