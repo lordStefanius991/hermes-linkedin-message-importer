@@ -10,6 +10,7 @@
 /frontend/dist/
 /frontend/dist-electron/
 /frontend/.vite/
+/frontend/runtime-hermes/
 
 # OS junk
 .DS_Store
