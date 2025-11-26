@@ -74,7 +74,7 @@ The tool is intended for users managing a high volume of LinkedIn messages, such
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/<your-user>/hermes-linkedin-addon.git
+git clone https://github.com/lordStefanius991/hermes-linkedin-addon.git
 cd hermes-linkedin-addon
 
 
