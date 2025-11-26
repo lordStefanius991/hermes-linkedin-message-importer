@@ -2,12 +2,12 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <title>Hermes - Pannello</title>
+    <title>Hermes</title>
     <style>
       body {
         font-family: sans-serif;
         margin: 10px;
-        min-width: 280px;
+        min-width: 320px;
       }
 
       button {
@@ -15,41 +15,33 @@
         cursor: pointer;
       }
 
-      #status {
-        margin-top: 10px;
-        font-size: 0.9em;
-        min-height: 1em;
-      }
-
-      .section-title {
-        margin-top: 10px;
-        font-size: 0.9em;
-        font-weight: bold;
+      .full-width-btn {
+        width: 100%;
+        margin-bottom: 6px;
+        box-sizing: border-box;
       }
 
       .lang-row {
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 6px;
         margin-bottom: 8px;
-        font-size: 0.85em;
       }
 
       .lang-row select {
-        flex: 0 0 auto;
+        padding: 2px 4px;
       }
 
-      .full-width-btn {
-        display: block;
-        width: 100%;
-        margin: 6px 0;
+      .section-title {
+        margin-top: 10px;
+        margin-bottom: 4px;
+        font-weight: bold;
       }
 
       .smart-reply-buttons {
         display: flex;
         flex-direction: column;
         gap: 4px;
-        margin-top: 4px;
       }
 
       .smart-row {
@@ -57,22 +49,59 @@
         gap: 4px;
       }
 
-      .smart-row button.main-btn {
-        flex: 1 1 auto;
+      .smart-row .main-btn {
+        flex: 1;
       }
 
-      .smart-row button.edit-btn {
-        flex: 0 0 auto;
+      .smart-row .edit-btn {
         width: 32px;
-        font-size: 0.85em;
       }
 
-      #hermes-footer {
-        margin-top: 10px;
-        font-size: 0.7rem;
-        text-align: center;
-        opacity: 0.6;
-        user-select: none;
+      #status {
+        margin-top: 8px;
+        font-size: 0.8rem;
+        min-height: 1em;
+      }
+
+      .thread-meta-section {
+        margin-top: 8px;
+        padding: 6px 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.85rem;
+      }
+
+      .thread-meta-row {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 4px;
+      }
+
+      .thread-meta-row label {
+        margin-bottom: 2px;
+      }
+
+      .thread-meta-row input,
+      .thread-meta-row textarea,
+      .thread-meta-row select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 4px;
+        font-size: 0.85rem;
+      }
+
+      .thread-meta-flags {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+
+      .thread-meta-flags label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8rem;
       }
     </style>
   </head>
@@ -89,6 +118,74 @@
 
     <button id="import-sidebar" class="full-width-btn"></button>
     <button id="import-thread" class="full-width-btn"></button>
+
+    <div id="thread-meta-section" class="thread-meta-section">
+      <div class="section-title" id="thread-meta-title"></div>
+
+      <div class="thread-meta-row">
+        <label for="thread-company" id="thread-company-label"></label>
+        <input id="thread-company" type="text" disabled />
+      </div>
+
+      <div class="thread-meta-row">
+        <label for="thread-role" id="thread-role-label"></label>
+        <input id="thread-role" type="text" disabled />
+      </div>
+
+      <div class="thread-meta-row">
+        <label for="thread-locations" id="thread-locations-label"></label>
+        <input
+          id="thread-locations"
+          type="text"
+          placeholder="-"
+          disabled
+        />
+      </div>
+
+      <div class="thread-meta-row">
+        <label for="thread-workmode" id="thread-workmode-label"></label>
+        <select id="thread-workmode" disabled>
+          <option value="unknown">-</option>
+          <option value="full_remote">Full remote</option>
+          <option value="hybrid">Hybrid</option>
+          <option value="onsite">On-site</option>
+        </select>
+      </div>
+
+      <div class="thread-meta-row">
+  <label for="thread-contract" id="thread-contract-label"></label>
+  <select id="thread-contract" disabled>
+    <option value="-">-</option>
+    <option value="permanent">Tempo indeterminato / Permanent</option>
+    <option value="freelance">Freelance / P.IVA / Contract</option>
+  </select>
+</div>
+
+
+      <div class="thread-meta-row">
+        <label
+          for="thread-recruiter-name"
+          id="thread-recruiter-name-label"
+        ></label>
+        <input id="thread-recruiter-name" type="text" disabled />
+      </div>
+
+      <div class="thread-meta-flags">
+        <label>
+          <input type="checkbox" id="thread-relocation" disabled />
+          <span id="thread-relocation-label"></span>
+        </label>
+        <label>
+          <input type="checkbox" id="thread-salary-mentioned" disabled />
+          <span id="thread-salary-mentioned-label"></span>
+        </label>
+      </div>
+
+      <div class="thread-meta-row">
+        <label for="thread-notes" id="thread-notes-label"></label>
+        <textarea id="thread-notes" rows="2" disabled></textarea>
+      </div>
+    </div>
 
     <div class="section-title" id="smart-section-title"></div>
     <div class="smart-reply-buttons">
@@ -107,9 +204,16 @@
     </div>
 
     <div id="status"></div>
-
-    <!-- firma in basso -->
-    <div id="hermes-footer"></div>
+    <div
+      id="hermes-footer"
+      style="
+        margin-top: 8px;
+        font-size: 0.7rem;
+        text-align: center;
+        opacity: 0.6;
+        user-select: none;
+      "
+    ></div>
 
     <script src="popup.js"></script>
   </body>

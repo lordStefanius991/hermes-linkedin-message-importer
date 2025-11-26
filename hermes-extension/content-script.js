@@ -14,48 +14,32 @@ function estraiConversazioniSidebar() {
 
   items.forEach((item) => {
     let sender = null;
-
-    const senderElOld = item.querySelector(
+    const titleEl = item.querySelector(
       '.msg-conversation-listitem__participant-names'
     );
-    if (senderElOld && senderElOld.innerText.trim()) {
-      sender = senderElOld.innerText.trim();
-    }
-
-    if (!sender) {
-      const spanName = item.querySelector('span[dir="ltr"], span[dir="auto"]');
-      if (spanName && spanName.innerText.trim()) {
-        sender = spanName.innerText.trim();
-      }
+    if (titleEl) {
+      sender = titleEl.innerText.trim();
     }
 
     let snippet = null;
-
-    const snippetElOld = item.querySelector(
+    const snippetEl = item.querySelector(
       '.msg-conversation-listitem__message-snippet'
     );
-    if (snippetElOld && snippetElOld.innerText.trim()) {
-      snippet = snippetElOld.innerText.trim();
+    if (snippetEl) {
+      snippet = snippetEl.innerText.trim();
     }
 
-    if (!snippet) {
-      const possible = item.querySelector(
-        'p, span.msg-s-event-listitem__body, div[dir="ltr"] > span:not(:has(*))'
-      );
-      if (possible && possible.innerText.trim()) {
-        snippet = possible.innerText.trim();
-      }
-    }
-
-    let timestamp = null;
+    let timestampLabel = null;
     const timeEl = item.querySelector('time');
     if (timeEl) {
-      const raw = timeEl.getAttribute('datetime') || timeEl.innerText || '';
-      timestamp = raw.trim() || null;
+      const dt = timeEl.getAttribute('datetime') || timeEl.innerText || '';
+      timestampLabel = dt.trim();
     }
 
     let threadUrl = null;
-    const link = item.querySelector('a[href*="/messaging/thread/"]');
+    const link = item.querySelector(
+      'a.msg-conversation-listitem__link, a[href*="/messaging/thread/"]'
+    );
     if (link && link.href) {
       threadUrl = link.href.split('?')[0];
     }
@@ -71,7 +55,7 @@ function estraiConversazioniSidebar() {
     conversazioni.push({
       sender,
       snippet,
-      timestamp,
+      timestampLabel,
       threadUrl,
       senderProfileUrl,
       fullText,
@@ -86,7 +70,9 @@ function estraiConversazioniSidebar() {
    ============================================================ */
 
 function estraiThreadCorrente() {
-  const headerEl = document.querySelector('h2.msg-entity-lockup__entity-title');
+  const headerEl = document.querySelector(
+    'h2.msg-entity-lockup__entity-title'
+  );
   const interlocutorName = headerEl ? headerEl.innerText.trim() : null;
 
   const msgNodes = document.querySelectorAll(
@@ -117,6 +103,8 @@ function estraiThreadCorrente() {
     }
   });
 
+  const firstMessageText = messaggi.length > 0 ? messaggi[0].text : '';
+
   const fullThread = messaggi
     .map((m) => `${m.senderName}:\n${m.text}`)
     .join('\n\n');
@@ -138,6 +126,7 @@ function estraiThreadCorrente() {
   return {
     messaggi,
     fullThread,
+    firstMessageText,
     interlocutorName,
     lastSenderName,
     lastTimestampLabel,
@@ -149,16 +138,8 @@ function estraiThreadCorrente() {
    INSERIMENTO RISPOSTA NELLA TEXTAREA
    ============================================================ */
 
-// qui cerco l’editor dentro la form dei messaggi
 function trovaEditorMessaggi() {
-  // caso principale: form classica LinkedIn
   let editor = document.querySelector(
-    'form.msg-form div.msg-form__contenteditable[contenteditable="true"]'
-  );
-  if (editor) return editor;
-
-  // fallback generico: qualsiasi contenteditable usato come textbox
-  editor = document.querySelector(
     'div.msg-form__contenteditable[contenteditable="true"]'
   );
   if (editor) return editor;
@@ -168,7 +149,6 @@ function trovaEditorMessaggi() {
   );
   if (editor) return editor;
 
-  // ultimo fallback: una textarea
   editor = document.querySelector('textarea');
   return editor || null;
 }
@@ -176,74 +156,49 @@ function trovaEditorMessaggi() {
 function inserisciRispostaNelEditor(text) {
   const editor = trovaEditorMessaggi();
   if (!editor) {
-    console.warn('[Hermes] Editor messaggi non trovato.');
+    console.warn('[Hermes] Editor dei messaggi non trovato.');
     return false;
   }
 
   editor.focus();
 
-  if (editor instanceof HTMLTextAreaElement) {
-    // caso raro, ma per sicurezza
-    editor.value = text;
-    const ev = new Event('input', { bubbles: true });
-    editor.dispatchEvent(ev);
+  const selection = window.getSelection();
+  if (!selection) {
+    editor.innerText = text;
     return true;
   }
 
-  // ------------------------------
-  // contentEditable (caso LinkedIn)
-  // ------------------------------
-
-  // puliamo contenuto ed eventuali flag "empty"
-  editor.innerHTML = '';
-  editor.removeAttribute('data-artdeco-is-empty');
-
-  // spezzamo il testo in paragrafi usando \n\n
-  const paragraphs = text.split('\n\n');
-
-  paragraphs.forEach((para) => {
-    const p = document.createElement('p');
-
-    // dentro ogni paragrafo, se ci sono \n singoli, li trasformiamo in <br>
-    const lines = para.split('\n');
-    lines.forEach((line, idx) => {
-      p.appendChild(document.createTextNode(line));
-      if (idx < lines.length - 1) {
-        p.appendChild(document.createElement('br'));
-      }
-    });
-
-    editor.appendChild(p);
-  });
-
-  // porta il cursore alla fine
-  const selection = window.getSelection();
   const range = document.createRange();
   range.selectNodeContents(editor);
   range.collapse(false);
   selection.removeAllRanges();
   selection.addRange(range);
 
-  // notifica a LinkedIn che c'è stato input
-  const ev = new InputEvent('input', {
+  editor.innerHTML = '';
+
+  const textNode = document.createTextNode(text);
+  editor.appendChild(textNode);
+
+  const inputEvent = new InputEvent('input', {
     bubbles: true,
-    data: text,
-    inputType: 'insertText',
+    cancelable: true,
   });
-  editor.dispatchEvent(ev);
+  editor.dispatchEvent(inputEvent);
 
   return true;
 }
 
-
 /* ============================================================
-   LISTENER MESSAGGI DAL BACKGROUND / POPUP
+   LISTENER MESSAGGI DA ESTENSIONE
    ============================================================ */
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'HERMES_IMPORT_SIDEBAR') {
     const data = estraiConversazioniSidebar();
-    console.log('[Hermes] Sidebar estratta (count =', data.length, ')');
+    console.log(
+      '[Hermes] Conversazioni estratte dalla sidebar:',
+      data.length
+    );
 
     chrome.runtime.sendMessage({
       type: 'HERMES_SIDEBAR_DATA',
@@ -257,6 +212,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     const {
       messaggi,
       fullThread,
+      firstMessageText,
       lastSenderName,
       lastTimestampLabel,
       interlocutorName,
@@ -274,6 +230,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       type: 'HERMES_THREAD_DATA',
       payload: {
         fullThread,
+        firstMessageText,
         lastSenderName,
         lastTimestampLabel,
         interlocutorName,
@@ -281,7 +238,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       },
     });
 
-    if (sendResponse) sendResponse({ ok: true, count: messaggi.length });
+    if (sendResponse) {
+      sendResponse({
+        ok: true,
+        count: messaggi.length,
+        fullThread,
+        firstMessageText,
+      });
+    }
   }
 
   if (msg.type === 'HERMES_GET_INTERLOCUTOR_NAME') {

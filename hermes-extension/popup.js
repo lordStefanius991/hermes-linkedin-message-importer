@@ -1,7 +1,8 @@
-// ====================== I18N SEMPLICE =========================
+// popup.js - Hermes extension popup & panel script
 
-let HERMES_LANG = 'en'; // it | en
+let HERMES_LANG = 'en'; // 'it' | 'en'
 
+// Detect browser language as default
 function detectDefaultLang() {
   const lang =
     (navigator.language || navigator.userLanguage || 'en').toLowerCase();
@@ -9,6 +10,7 @@ function detectDefaultLang() {
   return 'en';
 }
 
+// Simple i18n dictionary
 const HERMES_I18N = {
   it: {
     title: 'Hermes',
@@ -22,18 +24,21 @@ const HERMES_I18N = {
     btnSmartDecline: 'Declina gentilmente',
     btnSmartInterested: 'Interessato',
     btnSmartMoreInfo: 'Chiedi più info',
-    footerSignature: 'by Stefano Paolucci', 
+
+    footerSignature: 'by Stefano Paolucci',
 
     statusNoTab:
       'Nessuna tab LinkedIn trovata. Apri la messaggistica e riprova.',
-    statusSidebarInProgress: 'Hermes: estrazione sidebar in corso...',
+    statusSidebarInProgress: 'Hermes: import della sidebar in corso...',
     statusSidebarOk: (count) =>
       `Hermes: sidebar importata (${count} conversazioni).`,
-    statusSidebarCommError: 'Hermes: impossibile comunicare con la sidebar.',
-
-    statusThreadInProgress: 'Hermes: estrazione thread in corso...',
-    statusThreadOk: (count) => `Hermes: thread importato (${count} messaggi).`,
-    statusThreadCommError: 'Hermes: impossibile comunicare con il thread.',
+    statusSidebarCommError:
+      'Hermes: impossibile comunicare con la pagina delle conversazioni.',
+    statusThreadInProgress: 'Hermes: import del thread in corso...',
+    statusThreadOk: (count) =>
+      `Hermes: thread importato (${count} messaggi).`,
+    statusThreadCommError:
+      'Hermes: impossibile comunicare con il thread corrente.',
 
     statusSmartPreparing: 'Hermes: preparo una risposta...',
     statusSmartInsertedNamed: (name) =>
@@ -42,6 +47,18 @@ const HERMES_I18N = {
       'Hermes: risposta inserita. Controlla il testo e premi Invia.',
     statusSmartClipboardFallback:
       'Hermes: risposta copiata. Incollala manualmente in LinkedIn.',
+
+    // Thread metadata labels
+    threadMetaTitle: 'Dati offerta (auto)',
+    threadMetaCompany: 'Azienda',
+    threadMetaRole: 'Ruolo',
+    threadMetaLocations: 'Sedi',
+    threadMetaWorkMode: 'Modalità di lavoro',
+    threadMetaRecruiterName: 'Recruiter',
+    threadMetaRelocation: 'Relocation menzionata',
+    threadMetaSalaryMentioned: 'Salario menzionato',
+    threadMetaNotes: 'Note',
+    threadMetaContract: 'Tipo di contratto',
   },
   en: {
     title: 'Hermes',
@@ -55,26 +72,39 @@ const HERMES_I18N = {
     btnSmartDecline: 'Polite decline',
     btnSmartInterested: 'Interested',
     btnSmartMoreInfo: 'Ask for more info',
-     footerSignature: 'by Stefano Paolucci',
+
+    footerSignature: 'by Stefano Paolucci',
 
     statusNoTab: 'No LinkedIn tab found. Open Messaging and try again.',
-    statusSidebarInProgress: 'Hermes: extracting sidebar...',
+    statusSidebarInProgress: 'Hermes: importing sidebar...',
     statusSidebarOk: (count) =>
       `Hermes: sidebar imported (${count} conversations).`,
-    statusSidebarCommError: 'Hermes: cannot communicate with sidebar.',
-
-    statusThreadInProgress: 'Hermes: extracting thread...',
+    statusSidebarCommError:
+      'Hermes: cannot communicate with the conversations page.',
+    statusThreadInProgress: 'Hermes: importing thread...',
     statusThreadOk: (count) =>
       `Hermes: thread imported (${count} messages).`,
-    statusThreadCommError: 'Hermes: cannot communicate with thread.',
+    statusThreadCommError:
+      'Hermes: cannot communicate with the current thread.',
 
     statusSmartPreparing: 'Hermes: preparing a reply...',
     statusSmartInsertedNamed: (name) =>
-      `Hermes: reply inserted for "${name}". Review and press Send.`,
+      `Hermes: reply inserted for "${name}". Review it and press Send.`,
     statusSmartInsertedNoName:
       'Hermes: reply inserted. Review the text and press Send.',
     statusSmartClipboardFallback:
-      'Hermes: reply copied. Paste it manually in LinkedIn.',
+      'Hermes: reply copied. Paste it manually into LinkedIn.',
+
+    threadMetaTitle: 'Offer data (auto)',
+    threadMetaCompany: 'Company',
+    threadMetaRole: 'Role',
+    threadMetaLocations: 'Locations',
+    threadMetaWorkMode: 'Work mode',
+    threadMetaRecruiterName: 'Recruiter',
+    threadMetaRelocation: 'Relocation mentioned',
+    threadMetaSalaryMentioned: 'Salary mentioned',
+    threadMetaNotes: 'Notes',
+    threadMetaContract: 'Contract'
   },
 };
 
@@ -86,39 +116,61 @@ function t(key, ...args) {
   return key;
 }
 
-// ================== TEMPLATE (solo BODY personalizzabile) ====================
-// Corpo centrale del messaggio (senza saluto iniziale e firma)
+// ================== Smart reply templates =========================
 
 const DEFAULT_BODIES = {
   it: {
     polite_decline:
-      "ti ringrazio per il messaggio e per aver pensato a me. Al momento non sto valutando nuove opportunità, ma ti sono grato per il contatto.",
+      'ti ringrazio per il messaggio e per aver pensato a me. Al momento non sto valutando nuove opportunità, ma ti sono grato per il contatto.',
     interested:
-      "grazie per avermi contattato. L'opportunità mi sembra interessante e sarei disponibile ad approfondire. In particolare cerco ruoli full remote, con stack Java / backend e una RAL in linea con il mio profilo.",
+      "grazie per avermi contattato. L'opportunità mi sembra interessante e sarei felice di saperne qualcosa in più, soprattutto in merito al team, alle responsabilità principali e al range retributivo.",
     more_info:
-      "ti ringrazio per la proposta. Prima di fissare una call mi aiuterebbe avere qualche dettaglio in più su: tipo di contratto, range RAL, modalità di lavoro (presenza/ibrido/remote) e stack tecnologico principale.\n\nCosì posso capire subito se l'opportunità può essere in linea con il mio percorso.",
+      'ti ringrazio per il messaggio. Prima di proseguire, potresti condividere qualche dettaglio in più sul ruolo, sul tipo di contratto e sul range retributivo previsto?',
   },
   en: {
     polite_decline:
-      "thank you for your message and for considering me. At the moment I’m not actively looking for new opportunities, but I really appreciate you reaching out.",
+      "thank you for reaching out and for considering me. At the moment I'm not actively looking for new opportunities, but I really appreciate your message.",
     interested:
-      "thank you for getting in touch. The opportunity sounds interesting and I’d be happy to discuss it further. I’m mainly looking for fully remote roles, with a Java / backend tech stack and a salary range aligned with my experience.",
+      "thank you for getting in touch. The opportunity sounds interesting and I'd be happy to learn more, in particular about the team, key responsibilities and salary range.",
     more_info:
-      "thank you for reaching out. Before scheduling a call, it would help me to have a bit more information about: type of contract, salary range, work mode (on-site/hybrid/remote) and main tech stack.\n\nThis way I can quickly understand if the opportunity could be a good fit for my profile.",
+      'thank you for your message. Before moving forward, could you please share some more details about the role, the type of contract and the expected salary range?',
   },
 };
 
-// sovrascritture salvate dall'utente
-let CUSTOM_BODIES = {}; // struttura: { it: { polite_decline: '...', ... }, en: {...} }
+// custom bodies per language+mode saved in chrome.storage
+let CUSTOM_BODIES = {};
 
-function getBodyFor(lang, mode) {
-  const baseLang = DEFAULT_BODIES[lang] ? lang : 'en';
-  const defaults = DEFAULT_BODIES[baseLang];
-  const customLang = CUSTOM_BODIES[baseLang] || {};
-  return customLang[mode] || defaults[mode];
+// carica da hermesBodiesV1 (struttura: { it: { polite_decline: '...', ... }, en: { ... } })
+function loadCustomBodies(callback) {
+  try {
+    chrome.storage.sync.get(['hermesBodiesV1'], (res) => {
+      CUSTOM_BODIES = (res && res.hermesBodiesV1) || {};
+      if (callback) callback();
+    });
+  } catch (e) {
+    console.warn('[Hermes] Impossibile caricare hermesBodiesV1:', e);
+    if (callback) callback();
+  }
 }
 
-// ================== LOGICA ESTENSIONE =========================
+// opzionale ma utile: se editor.html salva, aggiorniamo la cache in tempo reale
+if (chrome && chrome.storage && chrome.storage.onChanged) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync' && changes.hermesBodiesV1) {
+      CUSTOM_BODIES = changes.hermesBodiesV1.newValue || {};
+    }
+  });
+}
+
+function getBody(lang, mode) {
+  const langMap = CUSTOM_BODIES[lang] || {};
+  if (langMap[mode]) {
+    return langMap[mode];
+  }
+  return (DEFAULT_BODIES[lang] || DEFAULT_BODIES.en)[mode];
+}
+
+// ================== Utils: LinkedIn tab & clipboard =========================
 
 function getLinkedinMessagingTab(callback, onError) {
   chrome.tabs.query(
@@ -131,43 +183,22 @@ function getLinkedinMessagingTab(callback, onError) {
     (tabs) => {
       if (!tabs || tabs.length === 0) {
         console.warn('[Hermes] Nessuna tab LinkedIn /messaging trovata.');
-        if (onError) {
-          onError(t('statusNoTab'));
-        }
+        if (onError) onError(t('statusNoTab'));
         return;
       }
 
-      const targetTab = tabs[0];
-      callback(targetTab);
+      const activeTab = tabs.find((tab) => tab.active) || tabs[0];
+      if (callback) callback(activeTab);
     }
   );
 }
 
-function buildSmartReply(mode, interlocutorName) {
-  const lang = HERMES_LANG === 'it' ? 'it' : 'en';
-  const firstName =
-    (interlocutorName || (lang === 'en' ? 'Recruiter' : 'Recruiter'))
-      .split(' ')[0];
-  const body = getBodyFor(lang, mode);
-
-  if (lang === 'it') {
-    const closing = 'Un saluto,\n';
-    return `Ciao ${firstName},\n\n${body}\n\n${closing}`;
-  } else {
-    const closing = 'Best regards,\n';
-    return `Hi ${firstName},\n\n${body}\n\n${closing}`;
-  }
-}
-
-async function copyToClipboard(text) {
+function copyToClipboard(text) {
   try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-
     const textarea = document.createElement('textarea');
     textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
     document.body.appendChild(textarea);
     textarea.select();
     document.execCommand('copy');
@@ -179,31 +210,442 @@ async function copyToClipboard(text) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const footer = document.getElementById('hermes-footer');
-  const titleEl = document.getElementById('title');
-  const btnSidebar = document.getElementById('import-sidebar');
-  const btnThread = document.getElementById('import-thread');
-  const openPanelBtn = document.getElementById('open-panel'); // undefined in panel.html
-  const status = document.getElementById('status');
+/* ================== Parsing euristico migliorato ===================== */
 
+function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
+  const baseText =
+    fullThread && fullThread.trim().length > 0
+      ? fullThread
+      : firstMessageText || '';
+
+  const text = baseText.replace(/\r/g, '');
+  const lower = text.toLowerCase();
+  const firstLower = (firstMessageText || '').toLowerCase();
+
+  const result = {};
+
+  // ---- COMPANY ---------------------------------------------------
+  // 1) "X is hiring!"
+  let m = text.match(/([A-Z][A-Za-z0-9&.\- ]+)\s+is hiring[!.]?/i);
+  if (m) {
+    result.company = m[1].trim();
+  }
+
+  // 2) "I'm a Tech Recruiter for/at X."
+  if (!result.company) {
+    m = text.match(
+      /recruiter\s+(?:for|at)\s+([A-Z][A-Za-z0-9&.\- ]+?)(?:[.,\n]|$)/i
+    );
+    if (m) {
+      result.company = m[1].trim();
+    }
+  }
+
+  // 3) Italiano: "sono Erica di Techyon"
+  if (!result.company) {
+    m = text.match(
+      /sono\s+[A-Z][^,\n]*?\s+di\s+([A-Z][A-Za-z0-9&.\- ]+)/i
+    );
+    if (m) {
+      result.company = m[1].trim();
+    }
+  }
+
+  // 4) "per conto di Dune Talent"
+  if (!result.company) {
+    m = text.match(/per conto di\s+([A-Z][A-Za-z0-9&.\- ]+)/i);
+    if (m) {
+      result.company = m[1].trim();
+    }
+  }
+
+  // 5) "My client, Turing, is hiring ..."
+  if (!result.company) {
+    m = text.match(
+      /My client,\s+([A-Z][A-Za-z0-9&.\- ]+),\s+is hiring/i
+    );
+    if (m) {
+      result.company = m[1].trim();
+    }
+  }
+
+  // 6) "with Turing" / "with <Company>" – MA **non** PST/CET/etc.
+  if (!result.company) {
+    m = text.match(/\bwith\s+([A-Z][A-Za-z0-9&.\- ]+)\b/);
+    if (m) {
+      const cand = m[1].trim();
+      const bad = ['PST', 'CET', 'CEST', 'GMT', 'UTC'];
+      if (!bad.includes(cand)) {
+        result.company = cand;
+      }
+    }
+  }
+
+  // 7) fallback da email: "...@adecco.it" → Adecco / Avanceservices
+  if (!result.company) {
+    const emailDomainMatch = text.match(
+      /[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+)\.[A-Za-z]{2,}/
+    );
+    if (emailDomainMatch) {
+      const domain = emailDomainMatch[1].toLowerCase();
+      const genericDomains = [
+        'gmail',
+        'yahoo',
+        'hotmail',
+        'outlook',
+        'live',
+        'icloud',
+        'proton',
+      ];
+      const mainPart = domain.split('.')[0];
+      if (!genericDomains.includes(mainPart)) {
+        result.company = mainPart.charAt(0).toUpperCase() + mainPart.slice(1);
+      }
+    }
+  }
+
+  // ---- ROLE ------------------------------------------------------
+  m = text.match(/looking for\s+(.+?)\s+for our/i);
+  if (!m) m = text.match(/looking for\s+(.+?)\s+in\s+/i);
+  if (!m) m = text.match(/for the position of\s+(.+?)[\.\n]/i);
+  if (!m) m = text.match(/We have\s+(.+?)\s+position/i);
+  if (!m) m = text.match(/ruolo di\s+(.+?)[,\.]/i);
+  if (!m) m = text.match(/alla ricerca di\s+un[oa]?\s+(.+?)[\.,\n]/i);
+  if (!m)
+    m = text.match(/job opportunity as a\s+["“](.+?)["”]/i);
+  if (!m)
+    m = text.match(
+      /Opportunità.*?\b([A-Z][A-Za-z0-9+\/\-\s]*Java[^-\n]*)/i
+    );
+
+  if (m) {
+    let role = m[1].trim();
+
+    role = role.replace(/\sand is looking for someone.*$/i, '');
+    role = role.replace(/\s+per una società.*$/i, '');
+
+    const roleLower = role.toLowerCase();
+    const roleKeywords = [
+      'developer',
+      'engineer',
+      'trainer',
+      'lead',
+      'architect',
+      'consultant',
+      'manager',
+      'analyst',
+      'fullstack',
+      'full stack',
+      'java',
+      'backend',
+      'front',
+      'data',
+    ];
+    const hasKeyword = roleKeywords.some((kw) =>
+      roleLower.includes(kw)
+    );
+
+    if (
+      hasKeyword &&
+      !roleLower.startsWith('someone ') &&
+      role.split(/\s+/).length <= 12
+    ) {
+      result.role = role.trim();
+    }
+  }
+
+  // ---- LOCATIONS -------------------------------------------------
+  let locMatch =
+    text.match(/teams in\s+([A-Za-z ,]+)/i) ||
+    text.match(/sita a\s+([A-Z][A-Za-z ]+)/i) ||
+    text.match(/con sede a\s+([A-Z][A-Za-z ]+)/i) ||
+    text.match(/sede di\s+([A-Z][A-Za-z ,]+)/i) ||
+    text.match(/HQ\s+(?:è|e')\s+a\s+([A-Z][A-Za-z ]+)/i) ||
+    text.match(/sedi di\s+([A-Z][A-Za-z ,e]+)/i) ||
+    text.match(/based in\s+([A-Z][A-Za-z ,]+)/i);
+
+  if (!locMatch) {
+    const mFallback = text.match(
+      /\b(?:in|at)\s+(?:the\s+)?([A-Z][A-Za-z ]+)/
+    );
+    if (mFallback) {
+      let locStr = mFallback[1];
+      locStr = locStr.replace(/\bwith our client\b.*$/i, '');
+      locMatch = [, locStr];
+    }
+  }
+
+  if (locMatch) {
+    let locStr = locMatch[1] || '';
+
+    const rawLocations = locStr
+      .split(/,| and | e | o /i)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const cleaned = rawLocations
+      .map((loc) => {
+        let l = loc;
+        l = l.replace(/\bwith our client\b.*$/i, '');
+        l = l.replace(/\byour background.*$/i, '');
+        l = l.replace(/\bopportunity.*$/i, '');
+        l = l.replace(/\brole.*$/i, '');
+        l = l.replace(/\bin ambito it\b/i, '');
+        return l.trim();
+      })
+      .filter((l) => l.length > 0)
+      .filter(
+        (l) =>
+          !/ambito it/i.test(l) &&
+          !/competenz/i.test(l) &&
+          !/linea con le tue competenze/i.test(l)
+      );
+
+    if (cleaned.length > 0) {
+      result.locations = cleaned;
+    }
+  }
+
+  // ---- WORK MODE -------------------------------------------------
+  // 1) se parla di ibrido, vince SEMPRE l'ibrido
+  if (
+    /hybrid/.test(lower) ||
+    /\bmodalità di lavoro ibrida\b/i.test(text) ||
+    /\bmodalita di lavoro ibrida\b/i.test(lower) ||
+    /\bibrido\b/i.test(text) ||
+    /- Ibrido\b/i.test(text) ||
+    /\d+\s+days?\s+in the office/.test(lower)
+  ) {
+    result.workMode = 'hybrid';
+  } else if (
+    /full remote|remote only|only remote|working fully remotely|100% remote/.test(
+      lower
+    )
+  ) {
+    result.workMode = 'full_remote';
+  } else if (
+    /on[- ]site|office-based|in the office only/.test(lower)
+  ) {
+    result.workMode = 'onsite';
+  } else {
+    result.workMode = 'unknown';
+  }
+
+  // Se ho location ma workMode sconosciuto → assumo on-site
+  if (!result.workMode || result.workMode === 'unknown') {
+    if (result.locations && result.locations.length > 0) {
+      result.workMode = 'onsite';
+    }
+  }
+
+  // ---- RECRUITER NAME -------------------------------------------
+  let sig = text.match(
+    /(?:Best|Best regards|Kind regards|Regards|Cordialmente|Saluti|un saluto)[^\n]*\n+([A-Z][^\n]+)/i
+  );
+  let recruiterName = sig ? sig[1].trim() : null;
+
+  // se è solo "Erica" → prova a prendere la riga dopo (Erica Gavazzoni)
+  if (recruiterName && recruiterName.split(/\s+/).length === 1) {
+    const lines = text.split('\n').map((l) => l.trim());
+    const idx = lines.findIndex((l) => l === recruiterName);
+    if (idx >= 0) {
+      for (let i = idx + 1; i < lines.length; i++) {
+        const ln = lines[i];
+        if (!ln) continue;
+        if (/^[A-Z][a-zà-ú]+(?:\s+[A-Z][a-zà-ú']+)+$/.test(ln)) {
+          recruiterName = ln;
+          break;
+        }
+      }
+    }
+  }
+
+  // fallback: ultima/penultima riga che "sembra" un nome
+  if (!recruiterName) {
+    const lines = text
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    const jobTitleKeywords = [
+      'specialist',
+      'recruiter',
+      'manager',
+      'engineer',
+      'consultant',
+      'talent',
+      'account',
+      'hr',
+      'responsabile',
+    ];
+
+    function isLikelyPersonName(line) {
+      if (!/^[A-Z]/.test(line)) return false;
+      if (/@/.test(line)) return false;
+      const lowerLine = line.toLowerCase();
+      if (jobTitleKeywords.some((kw) => lowerLine.includes(kw))) {
+        return false;
+      }
+      return /^[A-Z][A-Za-zà-ú']+(?:\s+[A-Z][A-Za-zà-ú']+)+$/.test(line);
+    }
+
+    let cand = null;
+    const last = lines[lines.length - 1] || '';
+    const prev = lines[lines.length - 2] || '';
+
+    if (isLikelyPersonName(last)) {
+      cand = last;
+    } else if (isLikelyPersonName(prev)) {
+      cand = prev;
+    }
+
+    if (!cand && prev && !/@/.test(prev)) {
+      const idx = lines.length - 2;
+      if (idx - 1 >= 0 && isLikelyPersonName(lines[idx - 1])) {
+        cand = lines[idx - 1];
+      }
+    }
+
+    if (cand) {
+      recruiterName = cand;
+    }
+  }
+
+  // fallback finale: usa il senderName del primo messaggio (es. Shalini N)
+  if (!recruiterName && firstSenderName) {
+    recruiterName = firstSenderName.trim();
+  }
+
+  if (recruiterName) {
+    result.recruiterName = recruiterName;
+  }
+
+  // ---- RELOCATION & SALARY --------------------------------------
+  result.relocationMentioned = /relocation/.test(lower);
+
+  const hasMoneyKeyword = /\b(€|\$|eur|usd|salary|compensation|ral|pay|rate)\b/i.test(
+    text
+  );
+  const hasDigit = /\d/.test(text);
+  result.salaryMentioned = hasMoneyKeyword && hasDigit;
+
+  // ---- CONTRACT TYPE --------------------------------------------
+  if (
+    /\bp\.?\s*iva\b/i.test(text) ||
+    /\bfreelance\b/i.test(text) ||
+    /\bfreelancer\b/i.test(text) ||
+    /\bcontract\b/i.test(lower)
+  ) {
+    result.contractType = 'freelance';
+  } else if (
+    /\btempo indeterminato\b/i.test(text) ||
+    /\bpermanent\b/i.test(lower) ||
+    /\binserimento diretto\b/i.test(lower)
+  ) {
+    result.contractType = 'permanent';
+  }
+
+  // ---- NOTES -----------------------------------------------------
+  const notes = [];
+
+  const hybridPhrase = text.match(
+    /(\d+\s+days?\s+in the office[^.\n]*)/i
+  );
+  if (hybridPhrase) {
+    notes.push(hybridPhrase[1].trim());
+  }
+
+  if (result.relocationMentioned) {
+    notes.push('relocation mentioned');
+  }
+
+  const salarySnippet = text.match(
+    /((?:rate|pay|salary|compensation)[^.\n]*\d[^.\n]*)/i
+  );
+  if (salarySnippet) {
+    notes.push(salarySnippet[1].trim());
+  }
+
+  // es. Asker: mettiamo "United States" nelle note se non è location
+  if (/United States/i.test(text) && !(result.locations || []).length) {
+    notes.push('United States');
+  }
+
+  if (notes.length) {
+    result.notes = notes.join(' · ');
+  }
+
+  return result;
+}
+
+
+
+// ================== Main UI logic ============================
+
+document.addEventListener('DOMContentLoaded', () => {
+  const titleEl = document.getElementById('title');
   const langLabel = document.getElementById('lang-label');
   const langSelect = document.getElementById('lang-select');
-
+  const btnSidebar = document.getElementById('import-sidebar');
+  const btnThread = document.getElementById('import-thread');
+  const openPanelBtn = document.getElementById('open-panel');
   const smartSectionTitle = document.getElementById('smart-section-title');
   const btnSmartDecline = document.getElementById('smart-decline');
   const btnSmartInterested = document.getElementById('smart-interested');
   const btnSmartMoreInfo = document.getElementById('smart-more-info');
-
   const btnSmartDeclineEdit = document.getElementById('smart-decline-edit');
-  const btnSmartInterestedEdit =
-    document.getElementById('smart-interested-edit');
-  const btnSmartMoreInfoEdit = document.getElementById('smart-more-info-edit');
+  const btnSmartInterestedEdit = document.getElementById(
+    'smart-interested-edit'
+  );
+  const btnSmartMoreInfoEdit = document.getElementById(
+    'smart-more-info-edit'
+  );
+  const statusEl = document.getElementById('status');
+  const footer = document.getElementById('hermes-footer');
 
-  function setStatus(msg) {
-    if (status) {
-      status.textContent = msg;
-    }
+  const threadMetaTitle = document.getElementById('thread-meta-title');
+  const threadCompanyLabel = document.getElementById('thread-company-label');
+  const threadRoleLabel = document.getElementById('thread-role-label');
+  const threadLocationsLabel = document.getElementById(
+    'thread-locations-label'
+  );
+  const threadWorkmodeLabel = document.getElementById(
+    'thread-workmode-label'
+  );
+    const threadContractLabel = document.getElementById(
+    'thread-contract-label'
+  );
+  const threadRecruiterNameLabel = document.getElementById(
+    'thread-recruiter-name-label'
+  );
+  const threadRelocationLabel = document.getElementById(
+    'thread-relocation-label'
+  );
+  const threadSalaryLabel = document.getElementById(
+    'thread-salary-mentioned-label'
+  );
+  const threadNotesLabel = document.getElementById('thread-notes-label');
+
+  const threadCompanyInput = document.getElementById('thread-company');
+  const threadRoleInput = document.getElementById('thread-role');
+  const threadLocationsInput =
+    document.getElementById('thread-locations');
+  const threadWorkmodeSelect =
+    document.getElementById('thread-workmode');
+  const threadRecruiterNameInput = document.getElementById(
+    'thread-recruiter-name'
+  );
+  const threadContractSelect = document.getElementById('thread-contract');
+  const threadRelocationCheckbox =
+    document.getElementById('thread-relocation');
+  const threadSalaryCheckbox = document.getElementById(
+    'thread-salary-mentioned'
+  );
+  const threadNotesTextarea = document.getElementById('thread-notes');
+
+  function setStatus(message) {
+    if (!statusEl) return;
+    statusEl.textContent = message || '';
   }
 
   function renderLabels() {
@@ -221,40 +663,177 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnSmartMoreInfo)
       btnSmartMoreInfo.textContent = t('btnSmartMoreInfo');
 
+    if (threadMetaTitle)
+      threadMetaTitle.textContent = t('threadMetaTitle');
+    if (threadCompanyLabel)
+      threadCompanyLabel.textContent = t('threadMetaCompany');
+    if (threadRoleLabel)
+      threadRoleLabel.textContent = t('threadMetaRole');
+    if (threadLocationsLabel)
+      threadLocationsLabel.textContent = t('threadMetaLocations');
+    if (threadWorkmodeLabel)
+      threadWorkmodeLabel.textContent = t('threadMetaWorkMode');
+    if (threadContractLabel)
+      threadContractLabel.textContent = t('threadMetaContract');
+    if (threadRecruiterNameLabel)
+      threadRecruiterNameLabel.textContent = t(
+        'threadMetaRecruiterName'
+      );
+    if (threadRelocationLabel)
+      threadRelocationLabel.textContent = t(
+        'threadMetaRelocation'
+      );
+    if (threadSalaryLabel)
+      threadSalaryLabel.textContent = t(
+        'threadMetaSalaryMentioned'
+      );
+    if (threadNotesLabel)
+      threadNotesLabel.textContent = t('threadMetaNotes');
+
     if (langSelect) {
       langSelect.value = HERMES_LANG;
     }
     if (footer) footer.textContent = t('footerSignature');
   }
 
-  // Carico lingua + template da storage
-  chrome.storage.sync.get(['hermesLang', 'hermesBodiesV1'], (res) => {
-    const stored = res && typeof res.hermesLang === 'string' ? res.hermesLang : null;
-    HERMES_LANG = stored || detectDefaultLang();
-    CUSTOM_BODIES = res && res.hermesBodiesV1 ? res.hermesBodiesV1 : {};
-    renderLabels();
-  });
+function fillThreadMetaForm(parsed) {
+  parsed = parsed || {};
 
-  // quando l'editor salva su chrome.storage.sync, aggiorniamo la cache locale
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'sync' && changes.hermesBodiesV1) {
-    CUSTOM_BODIES = changes.hermesBodiesV1.newValue || {};
-    // opzionale: piccolo log per debug
-    console.log('[Hermes] Template aggiornati da storage:', CUSTOM_BODIES);
-  }
-});
-
-  // Cambio lingua da select
-  if (langSelect) {
-    langSelect.addEventListener('change', () => {
-      const val = langSelect.value === 'it' ? 'it' : 'en';
-      HERMES_LANG = val;
-      chrome.storage.sync.set({ hermesLang: val });
-      renderLabels();
-    });
+  if (threadCompanyInput) {
+    threadCompanyInput.value = parsed.company || '';
   }
 
-  // --- IMPORTA SIDEBAR ---
+  if (threadRoleInput) {
+    threadRoleInput.value = parsed.role || '';
+  }
+
+  if (threadLocationsInput) {
+    const locs =
+      parsed.locations && parsed.locations.length
+        ? parsed.locations.join('; ')
+        : '';
+    // se è full remote e non ho location, meglio vuoto
+    threadLocationsInput.value =
+      parsed.workMode === 'full_remote' && !locs ? '' : locs;
+  }
+
+  // 👇 usa il nome giusto: threadWorkmodeSelect
+  if (threadWorkmodeSelect) {
+    let modeValue = 'unknown';
+    if (parsed.workMode === 'full_remote') modeValue = 'full_remote';
+    else if (parsed.workMode === 'hybrid') modeValue = 'hybrid';
+    else if (parsed.workMode === 'onsite') modeValue = 'onsite';
+    threadWorkmodeSelect.value = modeValue;
+  }
+
+  // 👇 usa il nome giusto: threadRecruiterNameInput
+  if (threadRecruiterNameInput) {
+    threadRecruiterNameInput.value = parsed.recruiterName || '';
+  }
+
+  if (threadRelocationCheckbox) {
+    threadRelocationCheckbox.checked = !!parsed.relocationMentioned;
+  }
+
+  if (threadSalaryCheckbox) {
+    threadSalaryCheckbox.checked = !!parsed.salaryMentioned;
+  }
+
+  if (threadNotesTextarea) {
+    threadNotesTextarea.value = parsed.notes || '';
+  }
+
+  if (threadContractSelect) {
+    let c = '-';
+    if (parsed.contractType === 'freelance') c = 'freelance';
+    else if (parsed.contractType === 'permanent') c = 'permanent';
+    threadContractSelect.value = c;
+  }
+}
+
+
+  function buildSmartReplyText(mode, name) {
+    const lang = HERMES_LANG;
+    const body = getBody(lang, mode) || '';
+    let greeting = '';
+    let closing = '';
+
+    if (lang === 'it') {
+      greeting = name ? `Ciao ${name},\n\n` : 'Ciao,\n\n';
+      closing = '\n\nUn saluto,\nStefano';
+    } else {
+      greeting = name ? `Hi ${name},\n\n` : 'Hi,\n\n';
+      closing = '\n\nBest regards,\nStefano';
+    }
+
+    return `${greeting}${body}${closing}`;
+  }
+
+  function handleSmartReply(mode) {
+    setStatus(t('statusSmartPreparing'));
+
+    getLinkedinMessagingTab(
+      (tab) => {
+        chrome.tabs.sendMessage(
+          tab.id,
+          { type: 'HERMES_GET_INTERLOCUTOR_NAME' },
+          (response) => {
+            const err = chrome.runtime.lastError;
+            if (err) {
+              console.warn(
+                '[Hermes] Errore richiesta interlocutore:',
+                err.message
+              );
+            }
+
+            const name =
+              response && typeof response.interlocutorName === 'string'
+                ? response.interlocutorName.trim()
+                : null;
+
+            const replyText = buildSmartReplyText(mode, name);
+
+            chrome.tabs.sendMessage(
+              tab.id,
+              { type: 'HERMES_INSERT_REPLY', replyText },
+              (res2) => {
+                const err2 = chrome.runtime.lastError;
+                if (err2) {
+                  console.warn(
+                    '[Hermes] Errore inserimento risposta:',
+                    err2.message
+                  );
+                }
+
+                const ok = res2 && res2.ok;
+
+                if (ok) {
+                  if (name) {
+                    setStatus(t('statusSmartInsertedNamed', name));
+                  } else {
+                    setStatus(t('statusSmartInsertedNoName'));
+                  }
+                } else {
+                  const copied = copyToClipboard(replyText);
+                  if (copied) {
+                    setStatus(t('statusSmartClipboardFallback'));
+                  } else {
+                    setStatus('');
+                  }
+                }
+              }
+            );
+          }
+        );
+      },
+      (msg) => {
+        setStatus(msg);
+      }
+    );
+  }
+
+  // =============== Event handlers ===================
+
   if (btnSidebar) {
     btnSidebar.addEventListener('click', () => {
       setStatus(t('statusSidebarInProgress'));
@@ -291,142 +870,55 @@ chrome.storage.onChanged.addListener((changes, area) => {
     });
   }
 
-  // --- IMPORTA THREAD CORRENTE ---
-  if (btnThread) {
-    btnThread.addEventListener('click', () => {
-      setStatus(t('statusThreadInProgress'));
-
-      getLinkedinMessagingTab(
-        (tab) => {
-          chrome.tabs.sendMessage(
-            tab.id,
-            { type: 'HERMES_IMPORT_THREAD' },
-            (response) => {
-              const err = chrome.runtime.lastError;
-              if (err) {
-                console.warn(
-                  '[Hermes] Errore richiesta thread:',
-                  err.message
-                );
-                setStatus(t('statusThreadCommError'));
-                return;
-              }
-
-              const count =
-                response && typeof response.count === 'number'
-                  ? response.count
-                  : '??';
-
-              setStatus(t('statusThreadOk', count));
-            }
-          );
-        },
-        (msg) => {
-          setStatus(msg);
-        }
-      );
-    });
-  }
-
-  // --- APRI PANNELLO FISSO (solo dal popup) ---
-  if (openPanelBtn) {
-    openPanelBtn.addEventListener('click', () => {
-      chrome.windows.create({
-        url: chrome.runtime.getURL('panel.html'),
-        type: 'popup',
-        width: 400,
-        height: 260,
-      });
-
-      window.close();
-    });
-  }
-
-  // --- EDITOR TEMPLATES (matitine) ---
-
-  function openEditor(mode) {
-    const lang = HERMES_LANG === 'it' ? 'it' : 'en';
-    chrome.windows.create({
-      url: chrome.runtime.getURL(
-        `editor.html?mode=${encodeURIComponent(mode)}&lang=${encodeURIComponent(
-          lang
-        )}`
-      ),
-      type: 'popup',
-      width: 520,
-      height: 450,
-    });
-  }
-
-  if (btnSmartDeclineEdit) {
-    btnSmartDeclineEdit.addEventListener('click', () => {
-      openEditor('polite_decline');
-    });
-  }
-  if (btnSmartInterestedEdit) {
-    btnSmartInterestedEdit.addEventListener('click', () => {
-      openEditor('interested');
-    });
-  }
-  if (btnSmartMoreInfoEdit) {
-    btnSmartMoreInfoEdit.addEventListener('click', () => {
-      openEditor('more_info');
-    });
-  }
-
-  // --- SMART REPLY BUTTONS ---
-
-  function handleSmartReply(mode) {
-    setStatus(t('statusSmartPreparing'));
+if (btnThread) {
+  btnThread.addEventListener('click', () => {
+    setStatus(t('statusThreadInProgress'));
 
     getLinkedinMessagingTab(
       (tab) => {
         chrome.tabs.sendMessage(
           tab.id,
-          { type: 'HERMES_GET_INTERLOCUTOR_NAME' },
-          async (response) => {
+          { type: 'HERMES_IMPORT_THREAD' },
+          (response) => {
             const err = chrome.runtime.lastError;
             if (err) {
               console.warn(
-                '[Hermes] Errore richiesta interlocutore:',
+                '[Hermes] Errore richiesta thread:',
                 err.message
               );
+              setStatus(t('statusThreadCommError'));
+              return;
             }
 
-            const name =
-              response && typeof response.interlocutorName === 'string'
-                ? response.interlocutorName.trim()
-                : null;
+            const count =
+              response && typeof response.count === 'number'
+                ? response.count
+                : '??';
 
-            const replyText = buildSmartReply(mode, name);
+            setStatus(t('statusThreadOk', count));
 
-            await copyToClipboard(replyText).catch(() => {});
+const firstMessageText =
+  response && typeof response.firstMessageText === 'string'
+    ? response.firstMessageText
+    : '';
+const fullThread =
+  response && typeof response.fullThread === 'string'
+    ? response.fullThread
+    : '';
 
-            chrome.tabs.sendMessage(
-              tab.id,
-              { type: 'HERMES_INSERT_REPLY', replyText },
-              (resp2) => {
-                const err2 = chrome.runtime.lastError;
-                if (err2) {
-                  console.warn(
-                    '[Hermes] Errore inserendo la risposta:',
-                    err2.message
-                  );
-                  setStatus(t('statusSmartClipboardFallback'));
-                  return;
-                }
+const interlocutorName =
+  response && typeof response.interlocutorName === 'string'
+    ? response.interlocutorName
+    : null;
 
-                if (resp2 && resp2.ok) {
-                  if (name) {
-                    setStatus(t('statusSmartInsertedNamed', name));
-                  } else {
-                    setStatus(t('statusSmartInsertedNoName'));
-                  }
-                } else {
-                  setStatus(t('statusSmartClipboardFallback'));
-                }
-              }
-            );
+
+const parsed = parseRecruiterMessage(
+  firstMessageText,
+  fullThread,
+  interlocutorName
+);
+
+fillThreadMetaForm(parsed);
           }
         );
       },
@@ -434,6 +926,18 @@ chrome.storage.onChanged.addListener((changes, area) => {
         setStatus(msg);
       }
     );
+  });
+}
+
+  if (openPanelBtn) {
+    openPanelBtn.addEventListener('click', () => {
+      chrome.windows.create({
+        url: 'panel.html',
+        type: 'popup',
+        width: 420,
+        height: 640,
+      });
+    });
   }
 
   if (btnSmartDecline) {
@@ -453,4 +957,57 @@ chrome.storage.onChanged.addListener((changes, area) => {
       handleSmartReply('more_info');
     });
   }
+
+function handleEditSmartBody(mode) {
+  const url =
+    'editor.html?mode=' +
+    encodeURIComponent(mode) +
+    '&lang=' +
+    encodeURIComponent(HERMES_LANG);
+
+  chrome.windows.create({
+    url,
+    type: 'popup',
+    width: 520,
+    height: 420,
+  });
+}
+
+
+  if (btnSmartDeclineEdit) {
+    btnSmartDeclineEdit.addEventListener('click', () => {
+      handleEditSmartBody('polite_decline');
+    });
+  }
+  if (btnSmartInterestedEdit) {
+    btnSmartInterestedEdit.addEventListener('click', () => {
+      handleEditSmartBody('interested');
+    });
+  }
+  if (btnSmartMoreInfoEdit) {
+    btnSmartMoreInfoEdit.addEventListener('click', () => {
+      handleEditSmartBody('more_info');
+    });
+  }
+
+  if (langSelect) {
+    langSelect.addEventListener('change', () => {
+      HERMES_LANG = langSelect.value === 'it' ? 'it' : 'en';
+      chrome.storage.sync.set({ hermesLang: HERMES_LANG }, () => {
+        renderLabels();
+      });
+    });
+  }
+
+  chrome.storage.sync.get(['hermesLang'], (res) => {
+    if (res && res.hermesLang && HERMES_I18N[res.hermesLang]) {
+      HERMES_LANG = res.hermesLang;
+    } else {
+      HERMES_LANG = detectDefaultLang();
+    }
+
+    loadCustomBodies(() => {
+      renderLabels();
+    });
+  });
 });
