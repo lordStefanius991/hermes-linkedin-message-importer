@@ -240,8 +240,9 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
       result.company = m[1].trim();
     }
   }
+  
 
-  // 3) Italiano: "sono Erica di Techyon"
+ 
   if (!result.company) {
     m = text.match(
       /sono\s+[A-Z][^,\n]*?\s+di\s+([A-Z][A-Za-z0-9&.\- ]+)/i
@@ -258,6 +259,16 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
       result.company = m[1].trim();
     }
   }
+    // 4BIS) "recruiter di Argologica"
+  if (!result.company) {
+    m = text.match(
+      /recruiter\s+(?:di|per conto di|per)\s+([A-Z][A-Za-z0-9&.\- ]+)/i
+    );
+    if (m) {
+      result.company = m[1].trim();
+    }
+  }
+
 
   // 5) "My client, Turing, is hiring ..."
   if (!result.company) {
@@ -308,6 +319,7 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
   m = text.match(/looking for\s+(.+?)\s+for our/i);
   if (!m) m = text.match(/looking for\s+(.+?)\s+in\s+/i);
   if (!m) m = text.match(/for the position of\s+(.+?)[\.\n]/i);
+  if (!m) {m = text.match(/position of\s+([A-Z][^.\n]+)/i);}
   if (!m) m = text.match(/We have\s+(.+?)\s+position/i);
   if (!m) m = text.match(/ruolo di\s+(.+?)[,\.]/i);
   if (!m) m = text.match(/alla ricerca di\s+un[oa]?\s+(.+?)[\.,\n]/i);
@@ -317,6 +329,9 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
     m = text.match(
       /Opportunità.*?\b([A-Z][A-Za-z0-9+\/\-\s]*Java[^-\n]*)/i
     );
+    if (!m) {
+  m = text.match(/\b(Fullstack Java|Java Fullstack)\b/i);
+}
 
   if (m) {
     let role = m[1].trim();
@@ -354,6 +369,16 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
     }
   }
 
+  // Fallback: se ho Java + PL/SQL ma nessun ruolo chiaro
+if (!result.role) {
+  const hasJava = /\bJava\b/i.test(text);
+  const hasPlsql = /PL\/SQL/i.test(text);
+  if (hasJava && hasPlsql) {
+    result.role = 'Java / PL-SQL developer';
+  }
+}
+
+
   // ---- LOCATIONS -------------------------------------------------
   let locMatch =
     text.match(/teams in\s+([A-Za-z ,]+)/i) ||
@@ -363,6 +388,10 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
     text.match(/HQ\s+(?:è|e')\s+a\s+([A-Z][A-Za-z ]+)/i) ||
     text.match(/sedi di\s+([A-Z][A-Za-z ,e]+)/i) ||
     text.match(/based in\s+([A-Z][A-Za-z ,]+)/i);
+
+    if (!locMatch) {
+    locMatch = text.match(/progetto\s+su\s+([A-Z][A-Za-z ]+)/i);
+  }
 
   if (!locMatch) {
     const mFallback = text.match(
@@ -375,36 +404,77 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
     }
   }
 
-  if (locMatch) {
-    let locStr = locMatch[1] || '';
+if (locMatch) {
+  let locStr = locMatch[1] || '';
 
-    const rawLocations = locStr
-      .split(/,| and | e | o /i)
-      .map((s) => s.trim())
-      .filter(Boolean);
+  const rawLocations = locStr
+    .split(/,| and | e | o /i)
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-    const cleaned = rawLocations
-      .map((loc) => {
-        let l = loc;
-        l = l.replace(/\bwith our client\b.*$/i, '');
-        l = l.replace(/\byour background.*$/i, '');
-        l = l.replace(/\bopportunity.*$/i, '');
-        l = l.replace(/\brole.*$/i, '');
-        l = l.replace(/\bin ambito it\b/i, '');
-        return l.trim();
-      })
-      .filter((l) => l.length > 0)
-      .filter(
-        (l) =>
-          !/ambito it/i.test(l) &&
-          !/competenz/i.test(l) &&
-          !/linea con le tue competenze/i.test(l)
-      );
+  const cleaned = rawLocations
+    .map((loc) => {
+      let l = loc;
+      l = l.replace(/\bwith our client\b.*$/i, '');
+      l = l.replace(/\byour background.*$/i, '');
+      l = l.replace(/\bopportunity.*$/i, '');
+      l = l.replace(/\brole.*$/i, '');
+      l = l.replace(/\bin ambito it\b/i, '');
+      return l.trim();
+    })
+    .filter((l) => l.length > 0)
+    .filter(
+      (l) =>
+        !/ambito it/i.test(l) &&
+        !/competenz/i.test(l) &&
+        !/linea con le tue competenze/i.test(l)
+    );
 
-    if (cleaned.length > 0) {
-      result.locations = cleaned;
+  // nomi che sembrano aziende, non città
+  const companyKeywords = [
+    'engineering',
+    'talent',
+    'consulting',
+    'consultancy',
+    'solutions',
+    'services',
+    'staffing',
+    'recruitment',
+    'agency',
+    'groupe',
+    'group',
+    'technologies',
+    'technology',
+    'company',
+    'partners',
+    'holding',
+    'srl',
+    'spa',
+    'gmbh',
+  ];
+
+  const filtered = cleaned.filter((loc) => {
+    const lower = loc.toLowerCase();
+
+    // se è esattamente uguale alla company, scarta
+    if (result.company && lower === result.company.toLowerCase()) {
+      return false;
     }
+
+    // se contiene parole tipiche da ragione sociale, scarta
+    if (companyKeywords.some((kw) => lower.includes(kw))) {
+      return false;
+    }
+
+    return true;
+  });
+
+  if (filtered.length > 0) {
+    result.locations = filtered;
+
   }
+}
+
 
   // ---- WORK MODE -------------------------------------------------
   // 1) se parla di ibrido, vince SEMPRE l'ibrido
@@ -439,85 +509,8 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
   }
 
   // ---- RECRUITER NAME -------------------------------------------
-  let sig = text.match(
-    /(?:Best|Best regards|Kind regards|Regards|Cordialmente|Saluti|un saluto)[^\n]*\n+([A-Z][^\n]+)/i
-  );
-  let recruiterName = sig ? sig[1].trim() : null;
-
-  // se è solo "Erica" → prova a prendere la riga dopo (Erica Gavazzoni)
-  if (recruiterName && recruiterName.split(/\s+/).length === 1) {
-    const lines = text.split('\n').map((l) => l.trim());
-    const idx = lines.findIndex((l) => l === recruiterName);
-    if (idx >= 0) {
-      for (let i = idx + 1; i < lines.length; i++) {
-        const ln = lines[i];
-        if (!ln) continue;
-        if (/^[A-Z][a-zà-ú]+(?:\s+[A-Z][a-zà-ú']+)+$/.test(ln)) {
-          recruiterName = ln;
-          break;
-        }
-      }
-    }
-  }
-
-  // fallback: ultima/penultima riga che "sembra" un nome
-  if (!recruiterName) {
-    const lines = text
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean);
-
-    const jobTitleKeywords = [
-      'specialist',
-      'recruiter',
-      'manager',
-      'engineer',
-      'consultant',
-      'talent',
-      'account',
-      'hr',
-      'responsabile',
-    ];
-
-    function isLikelyPersonName(line) {
-      if (!/^[A-Z]/.test(line)) return false;
-      if (/@/.test(line)) return false;
-      const lowerLine = line.toLowerCase();
-      if (jobTitleKeywords.some((kw) => lowerLine.includes(kw))) {
-        return false;
-      }
-      return /^[A-Z][A-Za-zà-ú']+(?:\s+[A-Z][A-Za-zà-ú']+)+$/.test(line);
-    }
-
-    let cand = null;
-    const last = lines[lines.length - 1] || '';
-    const prev = lines[lines.length - 2] || '';
-
-    if (isLikelyPersonName(last)) {
-      cand = last;
-    } else if (isLikelyPersonName(prev)) {
-      cand = prev;
-    }
-
-    if (!cand && prev && !/@/.test(prev)) {
-      const idx = lines.length - 2;
-      if (idx - 1 >= 0 && isLikelyPersonName(lines[idx - 1])) {
-        cand = lines[idx - 1];
-      }
-    }
-
-    if (cand) {
-      recruiterName = cand;
-    }
-  }
-
-  // fallback finale: usa il senderName del primo messaggio (es. Shalini N)
-  if (!recruiterName && firstSenderName) {
-    recruiterName = firstSenderName.trim();
-  }
-
-  if (recruiterName) {
-    result.recruiterName = recruiterName;
+    if (firstSenderName && firstSenderName.trim().length > 0) {
+    result.recruiterName = firstSenderName.trim();
   }
 
   // ---- RELOCATION & SALARY --------------------------------------
@@ -548,6 +541,7 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
   // ---- NOTES -----------------------------------------------------
   const notes = [];
 
+
   const hybridPhrase = text.match(
     /(\d+\s+days?\s+in the office[^.\n]*)/i
   );
@@ -566,10 +560,37 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
     notes.push(salarySnippet[1].trim());
   }
 
-  // es. Asker: mettiamo "United States" nelle note se non è location
+  // es. mettiamo "United States" nelle note se non è location
   if (/United States/i.test(text) && !(result.locations || []).length) {
     notes.push('United States');
   }
+
+// Durata tipo "5–6 week contract", "6 month contract", "6 mesi"
+const durationSnippet = text.match(
+  /(\b\d+\s*(?:-\s*\d+)?\s*(?:week|weeks|mese|mesi|month|months)\b[^.\n]*)/i
+);
+if (durationSnippet) {
+  notes.push(durationSnippet[1].trim());
+}
+
+// Ore settimanali tipo "20 hours per week", "20-40 hours per week"
+const hoursSnippet = text.match(
+  /(\b\d+\s*(?:-\s*\d+)?\s*hours?\s+per\s+week[^.\n]*)/i
+);
+if (hoursSnippet) {
+  notes.push(hoursSnippet[1].trim());
+}
+
+
+  const skills = [];
+if (/PL\/SQL/i.test(text)) skills.push('PL/SQL');
+if (/Spring Boot/i.test(text)) skills.push('Spring Boot');
+if (/Spring Framework/i.test(text)) skills.push('Spring Framework');
+if (/RESTful API/i.test(text)) skills.push('RESTful API');
+
+if (skills.length) {
+  notes.push('Skills: ' + skills.join(', '));
+}
 
   if (notes.length) {
     result.notes = notes.join(' · ');

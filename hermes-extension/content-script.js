@@ -244,6 +244,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         count: messaggi.length,
         fullThread,
         firstMessageText,
+        interlocutorName,
       });
     }
   }
