@@ -324,6 +324,11 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
   if (!m) m = text.match(/ruolo di\s+(.+?)[,\.]/i);
   if (!m) m = text.match(/alla ricerca di\s+un[oa]?\s+(.+?)[\.,\n]/i);
   if (!m)
+    m = text.match(
+      /(?:cerchiamo|stiamo\s+cercando)\s+un[oa]?\s+(.+?)(?:\s+in\b|\s+per\b|[\.,\n])/i
+    );
+
+  if (!m)
     m = text.match(/job opportunity as a\s+["“](.+?)["”]/i);
   if (!m)
     m = text.match(
@@ -477,12 +482,15 @@ if (locMatch) {
 
 
   // ---- WORK MODE -------------------------------------------------
-  // 1) se parla di ibrido, vince SEMPRE l'ibrido
+    // 1) se parla di ibrido, vince SEMPRE l'ibrido
   if (
     /hybrid/.test(lower) ||
     /\bmodalità di lavoro ibrida\b/i.test(text) ||
     /\bmodalita di lavoro ibrida\b/i.test(lower) ||
-    /\bibrido\b/i.test(text) ||
+    // "modalità ibrida" / "modalita ibrida"
+    /\bmodalità\b[^.\n]{0,20}\bibrid[ao]\b/i.test(text) ||
+    /\bmodalita\b[^.\n]{0,20}\bibrid[ao]\b/i.test(lower) ||
+    /\bibrid[ao]\b/i.test(text) ||
     /- Ibrido\b/i.test(text) ||
     /\d+\s+days?\s+in the office/.test(lower)
   ) {
