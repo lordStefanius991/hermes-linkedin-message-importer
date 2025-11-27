@@ -156,34 +156,53 @@ function trovaEditorMessaggi() {
 function inserisciRispostaNelEditor(text) {
   const editor = trovaEditorMessaggi();
   if (!editor) {
-    console.warn('[Hermes] Editor dei messaggi non trovato.');
+    console.warn('[Hermes] Editor non trovato');
     return false;
   }
 
-  editor.focus();
+  // Pulizia totale
+  editor.innerHTML = '';
 
-  const selection = window.getSelection();
-  if (!selection) {
-    editor.innerText = text;
-    return true;
-  }
+  // Splitta per righe: crea <p> per testo, <br> per vuote (mantiene un solo a capo)
+  const lines = text.split('\n');
+  lines.forEach((line, index) => {
+    if (line.trim() === '') {
+      // Riga vuota → solo <br> per un singolo a capo
+      editor.appendChild(document.createElement('br'));
+    } else {
+      const p = document.createElement('p');
+      p.textContent = line.trim();
+      editor.appendChild(p);
+    }
+  });
 
+  // Trigger eventi base
+  ['input', 'keyup', 'change'].forEach(type => {
+    editor.dispatchEvent(new Event(type, { bubbles: true }));
+  });
+
+  // FIX PER ABILITARE "INVIA": Simula una digitazione finale (aggiungi spazio vuoto e rimuovilo)
   const range = document.createRange();
   range.selectNodeContents(editor);
-  range.collapse(false);
+  range.collapse(false);  // Vai alla fine
+  const selection = window.getSelection();
   selection.removeAllRanges();
   selection.addRange(range);
 
-  editor.innerHTML = '';
+  // Inserisci uno spazio temporaneo
+  document.execCommand('insertText', false, ' ');
 
-  const textNode = document.createTextNode(text);
-  editor.appendChild(textNode);
+  // Trigger extra per refresh
+  editor.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+  editor.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' }));
 
-  const inputEvent = new InputEvent('input', {
-    bubbles: true,
-    cancelable: true,
-  });
-  editor.dispatchEvent(inputEvent);
+  // Rimuovi lo spazio extra (backspace simulato)
+  document.execCommand('delete');
+
+  // Final focus e trigger
+  editor.blur();
+  editor.focus();
+  editor.dispatchEvent(new Event('input', { bubbles: true }));
 
   return true;
 }

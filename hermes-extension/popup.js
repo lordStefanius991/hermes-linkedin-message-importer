@@ -224,7 +224,7 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
 
   const result = {};
 
-  // ---- COMPANY ---------------------------------------------------
+   // ---- COMPANY ---------------------------------------------------
   // 1) "X is hiring!"
   let m = text.match(/([A-Z][A-Za-z0-9&.\- ]+)\s+is hiring[!.]?/i);
   if (m) {
@@ -240,12 +240,29 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
       result.company = m[1].trim();
     }
   }
-  
 
- 
+  // 3) Italiano: "sono Erica di Techyon"
   if (!result.company) {
     m = text.match(
       /sono\s+[A-Z][^,\n]*?\s+di\s+([A-Z][A-Za-z0-9&.\- ]+)/i
+    );
+    if (m) {
+      result.company = m[1].trim();
+    }
+  }
+
+  // 3-bis) "recruiter di Argologica"
+  if (!result.company) {
+    m = text.match(/recruiter\s+di\s+([A-Z][A-Za-z0-9&.\-]+)/i);
+    if (m) {
+      result.company = m[1].trim();
+    }
+  }
+
+  // 3-ter) "ICT recruiter in ORBYTA" / "recruiter presso X"
+  if (!result.company) {
+    m = text.match(
+      /recruiter[^\n]{0,80}?\b(?:in|presso|at)\s+([A-Z][A-Za-z0-9&.\- ]+?)(?:[.,\n]|$)/i
     );
     if (m) {
       result.company = m[1].trim();
@@ -259,16 +276,6 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
       result.company = m[1].trim();
     }
   }
-    // 4BIS) "recruiter di Argologica"
-  if (!result.company) {
-    m = text.match(
-      /recruiter\s+(?:di|per conto di|per)\s+([A-Z][A-Za-z0-9&.\- ]+)/i
-    );
-    if (m) {
-      result.company = m[1].trim();
-    }
-  }
-
 
   // 5) "My client, Turing, is hiring ..."
   if (!result.company) {
@@ -311,6 +318,18 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
       const mainPart = domain.split('.')[0];
       if (!genericDomains.includes(mainPart)) {
         result.company = mainPart.charAt(0).toUpperCase() + mainPart.slice(1);
+      }
+    }
+  }
+
+  // 8) Fallback big tech (Google, Meta, ...)
+  if (!result.company) {
+    const bigTech = ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple'];
+    for (const name of bigTech) {
+      const re = new RegExp('\\b' + name + '\\b', 'i');
+      if (re.test(text)) {
+        result.company = name;
+        break;
       }
     }
   }
@@ -798,68 +817,81 @@ function fillThreadMetaForm(parsed) {
     return `${greeting}${body}${closing}`;
   }
 
-  function handleSmartReply(mode) {
-    setStatus(t('statusSmartPreparing'));
+async function handleSmartReply(mode) {
+  setStatus(t('statusSmartPreparing'));
 
-    getLinkedinMessagingTab(
-      (tab) => {
-        chrome.tabs.sendMessage(
-          tab.id,
-          { type: 'HERMES_GET_INTERLOCUTOR_NAME' },
-          (response) => {
-            const err = chrome.runtime.lastError;
-            if (err) {
-              console.warn(
-                '[Hermes] Errore richiesta interlocutore:',
-                err.message
-              );
-            }
+  // Carica i template personalizzati (se esistono)
+  const customBodies = await loadCustomBodies();
 
-            const name =
-              response && typeof response.interlocutorName === 'string'
-                ? response.interlocutorName.trim()
-                : null;
+  getLinkedinMessagingTab(
+    (tab) => {
+      chrome.tabs.sendMessage(
+        tab.id,
+        { type: 'HERMES_GET_INTERLOCUTOR_NAME' },
+        async (response) => {
+          const err = chrome.runtime.lastError;
+          if (err) {
+            console.warn('[Hermes] Errore richiesta interlocutore:', err.message);
+          }
 
-            const replyText = buildSmartReplyText(mode, name);
+          // Estrai il nome dall'header (es. "Natalia Kasperek" → "Natalia")
+          let fullName = response && typeof response.interlocutorName === 'string'
+            ? response.interlocutorName.trim()
+            : null;
 
-            chrome.tabs.sendMessage(
-              tab.id,
-              { type: 'HERMES_INSERT_REPLY', replyText },
-              (res2) => {
-                const err2 = chrome.runtime.lastError;
-                if (err2) {
-                  console.warn(
-                    '[Hermes] Errore inserimento risposta:',
-                    err2.message
-                  );
-                }
+          let firstName = 'there';
+          if (fullName) {
+            // Prendi solo la prima parola con iniziale maiuscola
+            const match = fullName.match(/^[A-ZÀ-Ú][a-zà-ú-]+/);
+            firstName = match ? match[0] : fullName.split(' ')[0];
+          }
 
-                const ok = res2 && res2.ok;
+          // Template: prima personalizzato, poi default
+          const template = 
+            customBodies?.[HERMES_LANG]?.[mode] ||
+            DEFAULT_BODIES[HERMES_LANG]?.[mode] ||
+            DEFAULT_BODIES.en[mode];
 
-                if (ok) {
-                  if (name) {
-                    setStatus(t('statusSmartInsertedNamed', name));
-                  } else {
-                    setStatus(t('statusSmartInsertedNoName'));
-                  }
+          // Costruisci il messaggio SENZA righe vuote inutili
+          let replyText = '';
+          if (HERMES_LANG === 'it') {
+            replyText = `Ciao ${firstName},\n${template}\nUn saluto,\nStefano`;
+          } else {
+            replyText = `Hi ${firstName},\n${template}\nBest regards,\nStefano`;
+          }
+
+          // Inserisci il messaggio
+          chrome.tabs.sendMessage(
+            tab.id,
+            { type: 'HERMES_INSERT_REPLY', replyText },
+            (res2) => {
+              const err2 = chrome.runtime.lastError;
+              if (err2) {
+                console.warn('[Hermes] Errore inserimento risposta:', err2.message);
+              }
+
+              const ok = res2 && res2.ok;
+
+              if (ok) {
+                setStatus(t('statusSmartInsertedNamed', firstName));
+              } else {
+                const copied = copyToClipboard(replyText);
+                if (copied) {
+                  setStatus(t('statusSmartClipboardFallback'));
                 } else {
-                  const copied = copyToClipboard(replyText);
-                  if (copied) {
-                    setStatus(t('statusSmartClipboardFallback'));
-                  } else {
-                    setStatus('');
-                  }
+                  setStatus('');
                 }
               }
-            );
-          }
-        );
-      },
-      (msg) => {
-        setStatus(msg);
-      }
-    );
-  }
+            }
+          );
+        }
+      );
+    },
+    (msg) => {
+      setStatus(msg);
+    }
+  );
+}
 
   // =============== Event handlers ===================
 
