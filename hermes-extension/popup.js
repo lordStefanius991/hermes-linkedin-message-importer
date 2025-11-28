@@ -301,7 +301,6 @@ function copyToClipboard(text) {
 }
 
 /* ================== Parsing euristico migliorato ===================== */
-
 function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
   const baseText =
     fullThread && fullThread.trim().length > 0
@@ -313,10 +312,11 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
   const firstLower = (firstMessageText || '').toLowerCase();
 
   const result = {};
+  let m;
 
-   // ---- COMPANY ---------------------------------------------------
+  // ---- COMPANY ---------------------------------------------------
   // 1) "X is hiring!"
-  let m = text.match(/([A-Z][A-Za-z0-9&.\- ]+)\s+is hiring[!.]?/i);
+  m = text.match(/([A-Z][A-Za-z0-9&.\- ]+)\s+is hiring[!.]?/i);
   if (m) {
     result.company = m[1].trim();
   }
@@ -333,9 +333,7 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
 
   // 3) Italiano: "sono Erica di Techyon"
   if (!result.company) {
-    m = text.match(
-      /sono\s+[A-Z][^,\n]*?\s+di\s+([A-Z][A-Za-z0-9&.\- ]+)/i
-    );
+    m = text.match(/sono\s+[A-Z][^,\n]*?\s+di\s+([A-Z][A-Za-z0-9&.\- ]+)/i);
     if (m) {
       result.company = m[1].trim();
     }
@@ -359,6 +357,14 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
     }
   }
 
+  // 3-quater) "Senior RecruITer - CORE @ Experis Italia"
+  if (!result.company) {
+    m = text.match(/@\s+([A-Z][A-Za-z0-9&.\- ]+?)(?:[,\n]|$)/);
+    if (m) {
+      result.company = m[1].trim();
+    }
+  }
+
   // 4) "per conto di Dune Talent"
   if (!result.company) {
     m = text.match(/per conto di\s+([A-Z][A-Za-z0-9&.\- ]+)/i);
@@ -369,15 +375,13 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
 
   // 5) "My client, Turing, is hiring ..."
   if (!result.company) {
-    m = text.match(
-      /My client,\s+([A-Z][A-Za-z0-9&.\- ]+),\s+is hiring/i
-    );
+    m = text.match(/My client,\s+([A-Z][A-Za-z0-9&.\- ]+),\s+is hiring/i);
     if (m) {
       result.company = m[1].trim();
     }
   }
 
-  // 6) "with Turing" / "with <Company>" – MA **non** PST/CET/etc.
+  // 6) "with Turing" / "with <Company>" – MA non PST/CET/etc.
   if (!result.company) {
     m = text.match(/\bwith\s+([A-Z][A-Za-z0-9&.\- ]+)\b/);
     if (m) {
@@ -389,13 +393,35 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
     }
   }
 
-  // 7) fallback da email: "...@adecco.it" → Adecco / Avanceservices
+  // 7) fallback da email: "...@it.experis.com" → Experis (non "it")
   if (!result.company) {
     const emailDomainMatch = text.match(
       /[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+)\.[A-Za-z]{2,}/
     );
     if (emailDomainMatch) {
-      const domain = emailDomainMatch[1].toLowerCase();
+      const domain = emailDomainMatch[1].toLowerCase(); // es. "it.experis"
+      const parts = domain.split('.');                   // ["it","experis"]
+      const genericSubdomains = [
+        'it',
+        'en',
+        'de',
+        'fr',
+        'es',
+        'pt',
+        'nl',
+        'uk',
+        'us',
+        'eu',
+        'www',
+        'mail',
+        'smtp',
+      ];
+
+      let mainPart = parts[0];
+      if (parts.length >= 2 && genericSubdomains.includes(parts[0])) {
+        mainPart = parts[1];
+      }
+
       const genericDomains = [
         'gmail',
         'yahoo',
@@ -405,9 +431,10 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
         'icloud',
         'proton',
       ];
-      const mainPart = domain.split('.')[0];
-      if (!genericDomains.includes(mainPart)) {
-        result.company = mainPart.charAt(0).toUpperCase() + mainPart.slice(1);
+
+      if (mainPart && !genericDomains.includes(mainPart)) {
+        result.company =
+          mainPart.charAt(0).toUpperCase() + mainPart.slice(1);
       }
     }
   }
@@ -425,31 +452,37 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
   }
 
   // ---- ROLE ------------------------------------------------------
-  m = text.match(/looking for\s+(.+?)\s+for our/i);
+  // pattern più "intelligenti"
+  m = text.match(/posizione di\s+(.+?)[,.\n]/i); // IT: "posizione di Java Senior ..."
+  if (!m) {
+    m = text.match(/in qualità di\s+(.+?)[,.\n]/i); // "in qualità di Front-End Developer"
+  }
+  if (!m) {
+    m = text.match(/profili\s+(.+?)\s+di diversa seniorit/i); // "profili Java Back End di diversa seniority"
+  }
+  if (!m) m = text.match(/looking for\s+(.+?)\s+for our/i);
   if (!m) m = text.match(/looking for\s+(.+?)\s+in\s+/i);
   if (!m) m = text.match(/for the position of\s+(.+?)[\.\n]/i);
-  if (!m) {m = text.match(/position of\s+([A-Z][^.\n]+)/i);}
+  if (!m) m = text.match(/position of\s+([A-Z][^.\n]+)/i);
   if (!m) m = text.match(/We have\s+(.+?)\s+position/i);
   if (!m) m = text.match(/ruolo di\s+(.+?)[,\.]/i);
   if (!m) m = text.match(/alla ricerca di\s+un[oa]?\s+(.+?)[\.,\n]/i);
-  if (!m)
+  if (!m) {
     m = text.match(
       /(?:cerchiamo|stiamo\s+cercando)\s+un[oa]?\s+(.+?)(?:\s+in\b|\s+per\b|[\.,\n])/i
     );
-
-  if (!m)
+  }
+  if (!m) {
     m = text.match(/job opportunity as a\s+["“](.+?)["”]/i);
-  if (!m)
-    m = text.match(
-      /Opportunità.*?\b([A-Z][A-Za-z0-9+\/\-\s]*Java[^-\n]*)/i
-    );
-    if (!m) {
-  m = text.match(/\b(Fullstack Java|Java Fullstack)\b/i);
-}
+  }
+  if (!m) {
+    m = text.match(/\b(Fullstack Java|Java Fullstack)\b/i);
+  }
 
   if (m) {
     let role = m[1].trim();
 
+    // ripulisci frasi di contorno
     role = role.replace(/\sand is looking for someone.*$/i, '');
     role = role.replace(/\s+per una società.*$/i, '');
 
@@ -466,32 +499,167 @@ function parseRecruiterMessage(firstMessageText, fullThread, firstSenderName) {
       'fullstack',
       'full stack',
       'java',
+      'php',
+      'python',
+      '.net',
       'backend',
-      'front',
+      'back end',
+      'back-end',
+      'frontend',
+      'front end',
+      'front-end',
       'data',
+      'devops',
+      'sre',
+      'qa',
+      'tester',
     ];
-    const hasKeyword = roleKeywords.some((kw) =>
-      roleLower.includes(kw)
-    );
+    const hasKeyword = roleKeywords.some((kw) => roleLower.includes(kw));
 
     if (
       hasKeyword &&
       !roleLower.startsWith('someone ') &&
-      role.split(/\s+/).length <= 12
+      role.split(/\s+/).length <= 15
     ) {
       result.role = role.trim();
     }
   }
 
-  // Fallback: se ho Java + PL/SQL ma nessun ruolo chiaro
-if (!result.role) {
-  const hasJava = /\bJava\b/i.test(text);
-  const hasPlsql = /PL\/SQL/i.test(text);
-  if (hasJava && hasPlsql) {
-    result.role = 'Java / PL-SQL developer';
+  // Fallback 1: se la prima riga sembra un titolo tipo "JAVA BACK END @ CAPGEMINI"
+  if (!result.role) {
+    const lines = text
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lines.length > 0) {
+      let firstLine = lines[0];
+      // rimuovi "@ Company" finale
+      firstLine = firstLine.replace(/@\s+.+$/, '').trim();
+      const flLower = firstLine.toLowerCase();
+      const titleKeywords = [
+        'developer',
+        'engineer',
+        'architect',
+        'consultant',
+        'manager',
+        'analyst',
+        'lead',
+        'php',
+        'python',
+        'frontend',
+        'front end',
+        'front-end',
+        'backend',
+        'back end',
+        'back-end',
+        'fullstack',
+        'full stack',
+        'data',
+        'devops',
+        'sre',
+        'qa',
+        'tester',
+        'java',
+        '.net',
+      ];
+      const looksLikeRole = titleKeywords.some((kw) =>
+        flLower.includes(kw)
+      );
+      if (looksLikeRole && firstLine.split(/\s+/).length <= 8) {
+        result.role = firstLine;
+      }
+    }
   }
-}
 
+  // Fallback 2: "glossario" per tecnologie → ruolo generico
+  if (!result.role) {
+    const hasJava = /\bjava\b/i.test(text);
+    const hasPhp = /\bphp\b/i.test(text);
+    const hasPython = /\bpython\b/i.test(text);
+    const hasJs =
+      /\bjavascript\b/i.test(text) || /\bjs\b/i.test(text);
+    const hasTs = /\btypescript\b/i.test(text);
+    const hasReact = /\breact\b/i.test(text);
+    const hasAngular = /\bangular\b/i.test(text);
+    const hasVue = /\bvue(?:\.js)?\b/i.test(text);
+    const hasNode = /\bnode\.?js\b/i.test(text);
+    const hasDotnet =
+      /\b\.net\b/i.test(text) || /\bnet core\b/i.test(text);
+    const hasCsharp = /\bc#\b/i.test(text);
+    const hasCplus = /\bc\+\+\b/i.test(text);
+    const hasGo = /\bgolang\b/i.test(text);
+    const hasRuby = /\bruby\b/i.test(text);
+    const hasKotlin = /\bkotlin\b/i.test(text);
+    const hasSwift = /\bswift\b/i.test(text);
+    const hasScala = /\bscala\b/i.test(text);
+    const hasDevops = /\bdevops\b/i.test(text);
+    const hasSre = /\bsre\b/i.test(text);
+    const hasDataEngineer = /\bdata engineer\b/i.test(text);
+    const hasDataScientist = /\bdata scientist\b/i.test(text);
+    const hasDataAnalyst = /\bdata analyst\b/i.test(text);
+    const backEndLike = /\bback[- ]?end\b/i.test(text);
+    const frontEndLike = /\bfront[- ]?end\b/i.test(text);
+    const fullstackLike = /\bfull[- ]?stack\b/i.test(text);
+
+    if (hasJava) {
+      if (backEndLike) result.role = 'Java Backend Developer';
+      else if (fullstackLike) result.role = 'Java Full-Stack Developer';
+      else if (frontEndLike) result.role = 'Java Frontend Developer';
+      else result.role = 'Java Developer';
+    } else if (hasPython) {
+      if (hasDataScientist) result.role = 'Data Scientist (Python)';
+      else if (hasDataEngineer) result.role = 'Data Engineer (Python)';
+      else result.role = 'Python Developer';
+    } else if (hasPhp) {
+      if (fullstackLike) result.role = 'PHP Full-Stack Developer';
+      else result.role = 'PHP Developer';
+    } else if (hasDotnet || hasCsharp) {
+      if (backEndLike || fullstackLike)
+        result.role = '.NET Backend Developer';
+      else result.role = '.NET Developer';
+    } else if (hasJs || hasTs || hasReact || hasAngular || hasVue) {
+      if (frontEndLike || !backEndLike) {
+        if (hasReact) result.role = 'React Frontend Developer';
+        else if (hasAngular) result.role = 'Angular Frontend Developer';
+        else result.role = 'Frontend Developer';
+      }
+    } else if (hasNode) {
+      if (fullstackLike) result.role = 'Node.js Full-Stack Developer';
+      else result.role = 'Node.js Backend Developer';
+    } else if (hasGo) {
+      result.role = 'Go Developer';
+    } else if (hasRuby) {
+      result.role = 'Ruby Developer';
+    } else if (hasKotlin) {
+      result.role = 'Kotlin Developer';
+    } else if (hasSwift) {
+      result.role = 'iOS / Swift Developer';
+    } else if (hasScala) {
+      result.role = 'Scala Developer';
+    } else if (hasDevops || hasSre) {
+      result.role = hasSre ? 'SRE / DevOps Engineer' : 'DevOps Engineer';
+    } else if (hasDataEngineer) {
+      result.role = 'Data Engineer';
+    } else if (hasDataScientist) {
+      result.role = 'Data Scientist';
+    } else if (hasDataAnalyst) {
+      result.role = 'Data Analyst';
+    }
+  }
+
+  // Fallback 3: se ho Java + PL/SQL ma nessun ruolo chiaro
+  if (!result.role) {
+    const hasJava = /\bJava\b/i.test(text);
+    const hasPlsql = /PL\/SQL/i.test(text);
+    if (hasJava && hasPlsql) {
+      result.role = 'Java / PL-SQL developer';
+    }
+  }
+
+  // Fallback 4: ultima difesa – se citano Java ma ancora role vuoto
+  if (!result.role && /\bjava\b/i.test(text)) {
+    result.role = 'Java Developer';
+  }
 
   // ---- LOCATIONS -------------------------------------------------
   let locMatch =
@@ -503,7 +671,7 @@ if (!result.role) {
     text.match(/sedi di\s+([A-Z][A-Za-z ,e]+)/i) ||
     text.match(/based in\s+([A-Z][A-Za-z ,]+)/i);
 
-    if (!locMatch) {
+  if (!locMatch) {
     locMatch = text.match(/progetto\s+su\s+([A-Z][A-Za-z ]+)/i);
   }
 
@@ -518,85 +686,85 @@ if (!result.role) {
     }
   }
 
-if (locMatch) {
-  let locStr = locMatch[1] || '';
+  if (locMatch) {
+    let locStr = locMatch[1] || '';
 
-  const rawLocations = locStr
-    .split(/,| and | e | o /i)
-    .map((s) => s.trim())
-    .filter(Boolean);
+    // normalizza "Milano e/o Roma"
+    locStr = locStr.replace(/e\/o/gi, ' e ');
 
-  const cleaned = rawLocations
-    .map((loc) => {
-      let l = loc;
-      l = l.replace(/\bwith our client\b.*$/i, '');
-      l = l.replace(/\byour background.*$/i, '');
-      l = l.replace(/\bopportunity.*$/i, '');
-      l = l.replace(/\brole.*$/i, '');
-      l = l.replace(/\bin ambito it\b/i, '');
-      return l.trim();
-    })
-    .filter((l) => l.length > 0)
-    .filter(
-      (l) =>
-        !/ambito it/i.test(l) &&
-        !/competenz/i.test(l) &&
-        !/linea con le tue competenze/i.test(l)
-    );
+    const rawLocations = locStr
+      .split(/,| and | e | o /i)
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-  // nomi che sembrano aziende, non città
-  const companyKeywords = [
-    'engineering',
-    'talent',
-    'consulting',
-    'consultancy',
-    'solutions',
-    'services',
-    'staffing',
-    'recruitment',
-    'agency',
-    'groupe',
-    'group',
-    'technologies',
-    'technology',
-    'company',
-    'partners',
-    'holding',
-    'srl',
-    'spa',
-    'gmbh',
-  ];
+    const cleaned = rawLocations
+      .map((loc) => {
+        let l = loc;
+        l = l.replace(/\bwith our client\b.*$/i, '');
+        l = l.replace(/\byour background.*$/i, '');
+        l = l.replace(/\bopportunity.*$/i, '');
+        l = l.replace(/\brole.*$/i, '');
+        l = l.replace(/\bin ambito it\b/i, '');
+        return l.trim();
+      })
+      .filter((l) => l.length > 0)
+      .filter(
+        (l) =>
+          !/ambito it/i.test(l) &&
+          !/competenz/i.test(l) &&
+          !/linea con le tue competenze/i.test(l)
+      );
 
-  const filtered = cleaned.filter((loc) => {
-    const lower = loc.toLowerCase();
+    // nomi che sembrano aziende, non città
+    const companyKeywords = [
+      'engineering',
+      'talent',
+      'consulting',
+      'consultancy',
+      'solutions',
+      'services',
+      'staffing',
+      'recruitment',
+      'agency',
+      'groupe',
+      'group',
+      'technologies',
+      'technology',
+      'company',
+      'partners',
+      'holding',
+      'srl',
+      'spa',
+      'gmbh',
+    ];
 
-    // se è esattamente uguale alla company, scarta
-    if (result.company && lower === result.company.toLowerCase()) {
-      return false;
+    const filtered = cleaned.filter((loc) => {
+      const l = loc.toLowerCase();
+
+      // se è esattamente uguale alla company, scarta
+      if (result.company && l === result.company.toLowerCase()) {
+        return false;
+      }
+
+      // se contiene parole tipiche da ragione sociale, scarta
+      if (companyKeywords.some((kw) => l.includes(kw))) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (filtered.length > 0) {
+      result.locations = filtered;
     }
-
-    // se contiene parole tipiche da ragione sociale, scarta
-    if (companyKeywords.some((kw) => lower.includes(kw))) {
-      return false;
-    }
-
-    return true;
-  });
-
-  if (filtered.length > 0) {
-    result.locations = filtered;
-
   }
-}
-
 
   // ---- WORK MODE -------------------------------------------------
-    // 1) se parla di ibrido, vince SEMPRE l'ibrido
+  // 1) se parla di ibrido, vince SEMPRE l'ibrido
   if (
     /hybrid/.test(lower) ||
     /\bmodalità di lavoro ibrida\b/i.test(text) ||
     /\bmodalita di lavoro ibrida\b/i.test(lower) ||
-    // "modalità ibrida" / "modalita ibrida"
     /\bmodalità\b[^.\n]{0,20}\bibrid[ao]\b/i.test(text) ||
     /\bmodalita\b[^.\n]{0,20}\bibrid[ao]\b/i.test(lower) ||
     /\bibrid[ao]\b/i.test(text) ||
@@ -610,9 +778,7 @@ if (locMatch) {
     )
   ) {
     result.workMode = 'full_remote';
-  } else if (
-    /on[- ]site|office-based|in the office only/.test(lower)
-  ) {
+  } else if (/on[- ]site|office-based|in the office only/.test(lower)) {
     result.workMode = 'onsite';
   } else {
     result.workMode = 'unknown';
@@ -626,7 +792,7 @@ if (locMatch) {
   }
 
   // ---- RECRUITER NAME -------------------------------------------
-    if (firstSenderName && firstSenderName.trim().length > 0) {
+  if (firstSenderName && firstSenderName.trim().length > 0) {
     result.recruiterName = firstSenderName.trim();
   }
 
@@ -658,7 +824,6 @@ if (locMatch) {
   // ---- NOTES -----------------------------------------------------
   const notes = [];
 
-
   const hybridPhrase = text.match(
     /(\d+\s+days?\s+in the office[^.\n]*)/i
   );
@@ -682,32 +847,31 @@ if (locMatch) {
     notes.push('United States');
   }
 
-// Durata tipo "5–6 week contract", "6 month contract", "6 mesi"
-const durationSnippet = text.match(
-  /(\b\d+\s*(?:-\s*\d+)?\s*(?:week|weeks|mese|mesi|month|months)\b[^.\n]*)/i
-);
-if (durationSnippet) {
-  notes.push(durationSnippet[1].trim());
-}
+  // Durata tipo "5–6 week contract", "6 month contract", "6 mesi"
+  const durationSnippet = text.match(
+    /(\b\d+\s*(?:-\s*\d+)?\s*(?:week|weeks|mese|mesi|month|months)\b[^.\n]*)/i
+  );
+  if (durationSnippet) {
+    notes.push(durationSnippet[1].trim());
+  }
 
-// Ore settimanali tipo "20 hours per week", "20-40 hours per week"
-const hoursSnippet = text.match(
-  /(\b\d+\s*(?:-\s*\d+)?\s*hours?\s+per\s+week[^.\n]*)/i
-);
-if (hoursSnippet) {
-  notes.push(hoursSnippet[1].trim());
-}
-
+  // Ore settimanali tipo "20 hours per week", "20-40 hours per week"
+  const hoursSnippet = text.match(
+    /(\b\d+\s*(?:-\s*\d+)?\s*hours?\s+per\s+week[^.\n]*)/i
+  );
+  if (hoursSnippet) {
+    notes.push(hoursSnippet[1].trim());
+  }
 
   const skills = [];
-if (/PL\/SQL/i.test(text)) skills.push('PL/SQL');
-if (/Spring Boot/i.test(text)) skills.push('Spring Boot');
-if (/Spring Framework/i.test(text)) skills.push('Spring Framework');
-if (/RESTful API/i.test(text)) skills.push('RESTful API');
+  if (/PL\/SQL/i.test(text)) skills.push('PL/SQL');
+  if (/Spring Boot/i.test(text)) skills.push('Spring Boot');
+  if (/Spring Framework/i.test(text)) skills.push('Spring Framework');
+  if (/RESTful API/i.test(text)) skills.push('RESTful API');
 
-if (skills.length) {
-  notes.push('Skills: ' + skills.join(', '));
-}
+  if (skills.length) {
+    notes.push('Skills: ' + skills.join(', '));
+  }
 
   if (notes.length) {
     result.notes = notes.join(' · ');
@@ -715,6 +879,8 @@ if (skills.length) {
 
   return result;
 }
+
+
 
 
 
