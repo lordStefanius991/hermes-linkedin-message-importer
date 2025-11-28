@@ -2,6 +2,8 @@
 
 let HERMES_LANG = 'en'; // 'it' | 'en'
 
+const RECRUITER_FORM_KEY = 'hermesRecruiterFormV1';
+
 // Detect browser language as default
 function detectDefaultLang() {
   const lang =
@@ -862,6 +864,59 @@ const smartSectionContainer = document.querySelector('.smart-reply-buttons');
   );
   const threadNotesLabel = document.getElementById('thread-notes-label');
 
+
+
+const recruiterTextInputs = [
+  recruiterCompanyInput,
+  recruiterRoleInput,
+  recruiterWorkmodeInput,
+  recruiterContractInput,
+  recruiterRecruiterInput,
+  recruiterNotesTextarea,
+].filter(Boolean);
+
+recruiterTextInputs.forEach((el) =>
+  el.addEventListener('input', saveRecruiterFormToStorage)
+);
+
+const recruiterCheckboxes = [
+  recruiterCompanyInclude,
+  recruiterRoleInclude,
+  recruiterWorkmodeInclude,
+  recruiterContractInclude,
+  recruiterRecruiterInclude,
+  recruiterNotesInclude,
+].filter(Boolean);
+
+recruiterCheckboxes.forEach((el) =>
+  el.addEventListener('change', saveRecruiterFormToStorage)
+);
+
+const recruiterSelects = [
+  recruiterGreetingSalutationSelect,
+  recruiterGreetingTitleSelect,
+  recruiterGreetingNameModeSelect,
+].filter(Boolean);
+
+recruiterSelects.forEach((el) =>
+  el.addEventListener('change', saveRecruiterFormToStorage)
+);
+
+// e all’inizio, una sola volta:
+restoreRecruiterFormFromStorage();
+
+
+
+
+
+
+
+
+
+
+
+
+
   const threadCompanyInput = document.getElementById('thread-company');
   const threadRoleInput = document.getElementById('thread-role');
   const threadLocationsInput =
@@ -1288,6 +1343,59 @@ template = template
 
     };
   }
+
+
+function saveRecruiterFormToStorage() {
+  try {
+    const form = collectRecruiterForm();
+    chrome.storage.sync.set({ [RECRUITER_FORM_KEY]: form });
+  } catch (e) {
+    console.warn('[Hermes] Impossibile salvare il form recruiter:', e);
+  }
+}
+
+function restoreRecruiterFormFromStorage(callback) {
+  try {
+    chrome.storage.sync.get([RECRUITER_FORM_KEY], (res) => {
+      const data = res && res[RECRUITER_FORM_KEY];
+      if (data) {
+        if (recruiterCompanyInput) recruiterCompanyInput.value = data.company || '';
+        if (recruiterRoleInput) recruiterRoleInput.value = data.role || '';
+        if (recruiterWorkmodeInput) recruiterWorkmodeInput.value = data.workmode || '';
+        if (recruiterContractInput) recruiterContractInput.value = data.contract || '';
+        if (recruiterRecruiterInput) recruiterRecruiterInput.value = data.recruiter || '';
+        if (recruiterNotesTextarea) recruiterNotesTextarea.value = data.notes || '';
+
+        if (recruiterCompanyInclude)
+          recruiterCompanyInclude.checked = !!data.includeCompany;
+        if (recruiterRoleInclude)
+          recruiterRoleInclude.checked = !!data.includeRole;
+        if (recruiterWorkmodeInclude)
+          recruiterWorkmodeInclude.checked = !!data.includeWorkmode;
+        if (recruiterContractInclude)
+          recruiterContractInclude.checked = !!data.includeContract;
+        if (recruiterRecruiterInclude)
+          recruiterRecruiterInclude.checked = !!data.includeRecruiter;
+        if (recruiterNotesInclude)
+          recruiterNotesInclude.checked = !!data.includeNotes;
+
+        // greeting
+        if (recruiterGreetingSalutationSelect && data.greetingSalutation)
+          recruiterGreetingSalutationSelect.value = data.greetingSalutation;
+        if (recruiterGreetingTitleSelect && data.greetingTitle)
+          recruiterGreetingTitleSelect.value = data.greetingTitle;
+        if (recruiterGreetingNameModeSelect && data.greetingNameMode)
+          recruiterGreetingNameModeSelect.value = data.greetingNameMode;
+      }
+      if (callback) callback();
+    });
+  } catch (e) {
+    console.warn('[Hermes] Impossibile leggere il form recruiter:', e);
+    if (callback) callback();
+  }
+}
+
+
 
 function buildRecruiterMessageText(candidateName, form) {
   const lang = HERMES_LANG;
