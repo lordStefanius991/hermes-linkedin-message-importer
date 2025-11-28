@@ -1641,11 +1641,18 @@ function buildRecruiterMessageText(candidateName, form) {
   let greeting = '';
   let closing = '';
 
-  // saluto di default per lingua
-  const defaultSalutation = lang === 'it' ? 'Ciao' : 'Hi';
-  const salutation =
-    (form && form.greetingSalutation) || defaultSalutation;
-  const title = (form && form.greetingTitle) || '';
+// usiamo le *chiavi* salvate nel form e le mappiamo
+  // alle label corrette per la lingua corrente
+  const defaultSalutationKey = 'ciao';   // default: Ciao / Hi
+  const salutationKey =
+    (form && form.greetingSalutation) || defaultSalutationKey;
+  const salutation = getSalutationLabel(lang, salutationKey);
+
+  const defaultTitleKey = 'none';
+  const titleKey =
+    (form && form.greetingTitle) || defaultTitleKey;
+  const title = getTitleLabel(lang, titleKey);
+
   const nameMode = (form && form.greetingNameMode) || 'first';
 
   const fullName = (candidateName || '').trim();
