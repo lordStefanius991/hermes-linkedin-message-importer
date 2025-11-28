@@ -32,6 +32,37 @@
         padding: 2px 4px;
       }
 
+            .mode-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+        font-size: 0.8rem;
+      }
+
+      .mode-row select {
+        padding: 2px 4px;
+      }
+
+      .include-flag {
+        display: flex;
+        align-items: center;
+        font-size: 0.7rem;
+        margin-left: 4px;
+        user-select: none;
+      }
+
+      .include-flag input {
+        margin-right: 2px;
+      }
+
+.include-flag span {
+  display: none;
+}
+
+      
+
+
       .section-title {
         margin-top: 10px;
         margin-bottom: 4px;
@@ -107,6 +138,14 @@
   </head>
   <body>
     <h3 id="title"></h3>
+
+        <div class="mode-row">
+      <span id="mode-label"></span>
+      <select id="mode-select">
+        <option value="dev"></option>
+        <option value="recruiter"></option>
+      </select>
+    </div>
 
     <div class="lang-row">
       <span id="lang-label"></span>
@@ -189,6 +228,158 @@
 
     <div class="section-title" id="smart-section-title"></div>
     <div class="smart-reply-buttons">
+      <div class="smart-row">
+        <button id="smart-decline" class="main-btn"></button>
+        <button id="smart-decline-edit" class="edit-btn">✎</button>
+      </div>
+      <div class="smart-row">
+        <button id="smart-interested" class="main-btn"></button>
+        <button id="smart-interested-edit" class="edit-btn">✎</button>
+      </div>
+      <div class="smart-row">
+        <button id="smart-more-info" class="main-btn"></button>
+        <button id="smart-more-info-edit" class="edit-btn">✎</button>
+      </div>
+    </div>
+
+
+
+     <!-- NUOVA SEZIONE RECRUITER (inizialmente nascosta) -->
+    <div id="recruiter-section" class="thread-meta-section" style="display: none;">
+      <div class="section-title" id="recruiter-assembler-title"></div>
+
+
+       <!-- Nuovi controlli saluto recruiter -->
+      <div class="thread-meta-row">
+        <label
+          for="recruiter-greeting-salutation"
+          id="recruiter-greeting-salutation-label"
+        >
+          Saluto
+        </label>
+          <select id="recruiter-greeting-salutation">
+            <option value="ciao">Ciao</option>
+            <option value="buongiorno">Buongiorno</option>
+            <option value="buonasera">Buonasera</option>
+            <option value="salve">Salve</option>
+          </select>
+      </div>
+
+      <div class="thread-meta-row">
+        <label
+          for="recruiter-greeting-title"
+          id="recruiter-greeting-title-label"
+        >
+          Appellativo
+        </label>
+            <select id="recruiter-greeting-title">
+              <option value=" "> </option>
+              <option value="sig">Sig.</option>
+              <option value="sig_ra">Sig.ra</option>
+              <option value="dott">Dott.</option>
+              <option value="dott_ssa">Dott.ssa</option>
+              <option value="ing">Ing.</option>
+              <option value="prof">Prof.</option>
+            </select>
+      </div>
+
+      <div class="thread-meta-row">
+        <label
+          for="recruiter-greeting-name-mode"
+          id="recruiter-greeting-name-mode-label"
+        >
+          Interlocutore
+        </label>
+          <select id="recruiter-greeting-name-mode">
+            <option value="first">Nome</option>
+            <option value="last">Cognome</option>
+            <option value="full">Nome e cognome</option>
+          </select>
+      </div>
+
+      
+
+      <div class="thread-meta-row">
+        <label for="recruiter-company" id="recruiter-company-label"></label>
+        <div style="display: flex; align-items: flex-end; gap: 4px;">
+          <input id="recruiter-company" type="text" />
+          <label class="include-flag">
+            <input type="checkbox" id="recruiter-company-include" checked />
+            <span>V</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="thread-meta-row">
+        <label for="recruiter-role" id="recruiter-role-label"></label>
+        <div style="display: flex; align-items: flex-end; gap: 4px;">
+          <input id="recruiter-role" type="text" />
+          <label class="include-flag">
+            <input type="checkbox" id="recruiter-role-include" checked />
+            <span>V</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="thread-meta-row">
+        <label for="recruiter-workmode" id="recruiter-workmode-label"></label>
+        <div style="display: flex; align-items: flex-end; gap: 4px;">
+          <input id="recruiter-workmode" type="text" />
+          <label class="include-flag">
+            <input type="checkbox" id="recruiter-workmode-include" checked />
+            <span>V</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="thread-meta-row">
+        <label for="recruiter-contract" id="recruiter-contract-label"></label>
+        <div style="display: flex; align-items: flex-end; gap: 4px;">
+          <input id="recruiter-contract" type="text" />
+          <label class="include-flag">
+            <input type="checkbox" id="recruiter-contract-include" checked />
+            <span>V</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="thread-meta-row">
+        <label for="recruiter-recruiter" id="recruiter-recruiter-label"></label>
+        <div style="display: flex; align-items: flex-end; gap: 4px;">
+          <input id="recruiter-recruiter" type="text" />
+          <label class="include-flag">
+            <input type="checkbox" id="recruiter-recruiter-include" checked />
+            <span>V</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="thread-meta-row">
+        <label for="recruiter-notes" id="recruiter-notes-label"></label>
+        <div style="display: flex; align-items: flex-end; gap: 4px;">
+          <textarea id="recruiter-notes"></textarea>
+          <label class="include-flag">
+            <input type="checkbox" id="recruiter-notes-include" checked />
+            <span>V</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEZIONE MESSAGGIO ASSEMBLATO (RECRUITER) -->
+    <div id="recruiter-assembled-section" style="display: none;">
+      <div class="section-title" id="recruiter-assembled-title"></div>
+      <div class="smart-reply-buttons">
+        <div class="smart-row">
+          <button id="recruiter-generate" class="main-btn"></button>
+          <button id="recruiter-edit-template" class="edit-btn">✎</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sezione Smart reply classica (candidato) -->
+    <div class="section-title" id="smart-section-title"></div>
+    <div id="smart-section-container" class="smart-reply-buttons">
       <div class="smart-row">
         <button id="smart-decline" class="main-btn"></button>
         <button id="smart-decline-edit" class="edit-btn">✎</button>

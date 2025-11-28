@@ -26,6 +26,40 @@ const HERMES_I18N = {
     btnSmartMoreInfo: 'Chiedi più info',
 
     footerSignature: 'by Stefano Paolucci',
+    btnOpenRecruiter: 'Modalità recruiter',
+
+
+    labelMode: 'Modalità',
+    modeDev: 'Modalità candidato',
+    modeRecruiter: 'Modalità recruiter',
+
+    recruiterAssemblerTitle: 'Assembla il messaggio',
+    recruiterGreetingSalutation: 'Saluto',
+    recruiterGreetingTitle: 'Appellativo',
+    recruiterGreetingNameMode: 'Interlocutore',
+    recruiterCompany: 'Azienda',
+
+
+
+    recruiterCompany: 'Azienda',
+    recruiterRole: 'Ruolo',
+    recruiterWorkmode: 'Modalità di lavoro',
+    recruiterContract: 'Tipo di contratto',
+    recruiterRecruiter: 'Recruiter',
+    recruiterNotes: 'Ulteriori note',
+
+    recruiterAssembledTitle: 'Messaggio assemblato',
+    recruiterBtnGenerate: 'Genera recruiting message',
+
+    statusRecruiterPreparing: 'Hermes: preparo il messaggio recruiter...',
+    statusRecruiterInsertedNamed: (name) =>
+      `Hermes: messaggio recruiter inserito per "${name}". Controlla e premi Invia.`,
+    statusRecruiterInsertedNoName:
+      'Hermes: messaggio recruiter inserito. Controlla il testo e premi Invia.',
+    statusRecruiterClipboardFallback:
+      'Hermes: messaggio recruiter copiato. Incollalo manualmente in LinkedIn.',
+
+
 
     statusNoTab:
       'Nessuna tab LinkedIn trovata. Apri la messaggistica e riprova.',
@@ -74,6 +108,37 @@ const HERMES_I18N = {
     btnSmartMoreInfo: 'Ask for more info',
 
     footerSignature: 'by Stefano Paolucci',
+     btnOpenRecruiter: 'Recruiter mode',
+
+    labelMode: 'Mode',
+    modeDev: 'Candidate mode',
+    modeRecruiter: 'Recruiter mode',
+
+    recruiterAssemblerTitle: 'Assemble message',
+
+    recruiterGreetingSalutation: 'Greeting',
+    recruiterGreetingTitle: 'Title',
+    recruiterGreetingNameMode: 'Name format',
+    recruiterCompany: 'Company',
+
+    recruiterCompany: 'Company',
+    recruiterRole: 'Role',
+    recruiterWorkmode: 'Work mode',
+    recruiterContract: 'Contract type',
+    recruiterRecruiter: 'Recruiter',
+    recruiterNotes: 'Additional notes',
+
+    recruiterAssembledTitle: 'Assembled message',
+    recruiterBtnGenerate: 'Generate recruiting message',
+
+    statusRecruiterPreparing: 'Hermes: preparing recruiter message...',
+    statusRecruiterInsertedNamed: (name) =>
+      `Hermes: recruiter message inserted for "${name}". Review it and press Send.`,
+    statusRecruiterInsertedNoName:
+      'Hermes: recruiter message inserted. Review the text and press Send.',
+    statusRecruiterClipboardFallback:
+      'Hermes: recruiter message copied. Paste it manually into LinkedIn.',
+
 
     statusNoTab: 'No LinkedIn tab found. Open Messaging and try again.',
     statusSidebarInProgress: 'Hermes: importing sidebar...',
@@ -139,6 +204,29 @@ const DEFAULT_BODIES = {
 
 // custom bodies per language+mode saved in chrome.storage
 let CUSTOM_BODIES = {};
+
+
+const DEFAULT_RECRUITER_BODIES = {
+  it: {
+    recruiter_message:
+      "ti contatto{company_block}{role_block}{workmode_block}{contract_block}{locations_block}.\n\n{notes}\n\nSe l'opportunità può interessarti, fammi sapere e possiamo organizzare una breve call.",
+  },
+  en: {
+    recruiter_message:
+      'I am reaching out{company_block}{role_block}{workmode_block}{contract_block}{locations_block}.\n\n{notes}\n\nIf this could be of interest, I would be happy to schedule a short call.',
+  },
+};
+
+
+function getRecruiterBody(lang) {
+  const langMap = CUSTOM_BODIES[lang] || {};
+  if (langMap.recruiter_message) {
+    return langMap.recruiter_message;
+  }
+  const defaults =
+    DEFAULT_RECRUITER_BODIES[lang] || DEFAULT_RECRUITER_BODIES.en;
+  return defaults.recruiter_message;
+}
 
 // carica da hermesBodiesV1 (struttura: { it: { polite_decline: '...', ... }, en: { ... } })
 function loadCustomBodies(callback) {
@@ -638,10 +726,108 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnThread = document.getElementById('import-thread');
   const openPanelBtn = document.getElementById('open-panel');
   const smartSectionTitle = document.getElementById('smart-section-title');
+
+
+// container reale dei 3 bottoni smart
+const smartSectionContainer = document.querySelector('.smart-reply-buttons');
+
+
   const btnSmartDecline = document.getElementById('smart-decline');
   const btnSmartInterested = document.getElementById('smart-interested');
   const btnSmartMoreInfo = document.getElementById('smart-more-info');
   const btnSmartDeclineEdit = document.getElementById('smart-decline-edit');
+  const openRecruiterBtn = document.getElementById('open-recruiter')
+    const modeLabel = document.getElementById('mode-label');
+  const modeSelect = document.getElementById('mode-select');
+
+  //recruiter
+    const recruiterSection = document.getElementById('recruiter-section');
+  const recruiterAssembledSection = document.getElementById(
+    'recruiter-assembled-section'
+  );
+
+  const recruiterAssemblerTitle = document.getElementById(
+    'recruiter-assembler-title'
+  );
+
+    const recruiterGreetingSalutationLabel = document.getElementById(
+    'recruiter-greeting-salutation-label'
+  );
+  const recruiterGreetingTitleLabel = document.getElementById(
+    'recruiter-greeting-title-label'
+  );
+  const recruiterGreetingNameModeLabel = document.getElementById(
+    'recruiter-greeting-name-mode-label'
+  );
+
+
+  const recruiterCompanyLabel = document.getElementById(
+    'recruiter-company-label'
+  );
+  const recruiterRoleLabel = document.getElementById('recruiter-role-label');
+  const recruiterWorkmodeLabel = document.getElementById(
+    'recruiter-workmode-label'
+  );
+  const recruiterContractLabel = document.getElementById(
+    'recruiter-contract-label'
+  );
+  const recruiterRecruiterLabel = document.getElementById(
+    'recruiter-recruiter-label'
+  );
+  const recruiterNotesLabel = document.getElementById(
+    'recruiter-notes-label'
+  );
+
+    const recruiterGreetingSalutationSelect = document.getElementById(
+    'recruiter-greeting-salutation'
+  );
+  const recruiterGreetingTitleSelect = document.getElementById(
+    'recruiter-greeting-title'
+  );
+  const recruiterGreetingNameModeSelect = document.getElementById(
+    'recruiter-greeting-name-mode'
+  );
+
+
+  const recruiterCompanyInput = document.getElementById('recruiter-company');
+  const recruiterRoleInput = document.getElementById('recruiter-role');
+  const recruiterWorkmodeInput =
+    document.getElementById('recruiter-workmode');
+  const recruiterContractInput =
+    document.getElementById('recruiter-contract');
+  const recruiterRecruiterInput =
+    document.getElementById('recruiter-recruiter');
+  const recruiterNotesTextarea =
+    document.getElementById('recruiter-notes');
+
+  const recruiterCompanyInclude = document.getElementById(
+    'recruiter-company-include'
+  );
+  const recruiterRoleInclude = document.getElementById(
+    'recruiter-role-include'
+  );
+  const recruiterWorkmodeInclude = document.getElementById(
+    'recruiter-workmode-include'
+  );
+  const recruiterContractInclude = document.getElementById(
+    'recruiter-contract-include'
+  );
+  const recruiterRecruiterInclude = document.getElementById(
+    'recruiter-recruiter-include'
+  );
+  const recruiterNotesInclude = document.getElementById(
+    'recruiter-notes-include'
+  );
+
+  const recruiterAssembledTitle = document.getElementById(
+    'recruiter-assembled-title'
+  );
+  const recruiterGenerateBtn = document.getElementById('recruiter-generate');
+  const recruiterEditTemplateBtn = document.getElementById(
+    'recruiter-edit-template'
+  );
+
+
   const btnSmartInterestedEdit = document.getElementById(
     'smart-interested-edit'
   );
@@ -650,6 +836,8 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   const statusEl = document.getElementById('status');
   const footer = document.getElementById('hermes-footer');
+    const threadMetaSection = document.getElementById('thread-meta-section');
+
 
   const threadMetaTitle = document.getElementById('thread-meta-title');
   const threadCompanyLabel = document.getElementById('thread-company-label');
@@ -695,10 +883,75 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!statusEl) return;
     statusEl.textContent = message || '';
   }
+  // rende setStatus visibile a recruiter.js
+  window.setStatus = setStatus;
+
+function getSalutationLabel(lang, key) {
+  const map = {
+    it: {
+      ciao: 'Ciao',
+      buongiorno: 'Buongiorno',
+      buonasera: 'Buonasera',
+      salve: 'Salve',
+    },
+    en: {
+      ciao: 'Hi',
+      buongiorno: 'Good morning',
+      buonasera: 'Good evening',
+      salve: 'Hello',
+    },
+  };
+  const m = map[lang] || map.en;
+  return m[key] || map.it[key] || key;
+}
+
+function getTitleLabel(lang, key) {
+  const map = {
+    it: {
+      none: ' ',
+      sig: 'Sig.',
+      sig_ra: 'Sig.ra',
+      dott: 'Dott.',
+      dott_ssa: 'Dott.ssa',
+      ing: 'Ing.',
+      prof: 'Prof.',
+    },
+    en: {
+      none: ' ',
+      sig: 'Mr',
+      sig_ra: 'Ms',
+      dott_ssa: 'Mrs',
+      dott: 'Dr', 
+      ing: 'Eng.',
+      prof: 'Prof.',
+    },
+  };
+  const m = map[lang] || map.en;
+  return m[key] || map.it[key] || '';
+}
+
+function getNameModeLabel(lang, key) {
+  const map = {
+    it: {
+      first: 'Nome',
+      last: 'Cognome',
+      full: 'Nome e cognome',
+    },
+    en: {
+      first: 'First name',
+      last: 'Last name',
+      full: 'Full name',
+    },
+  };
+  const m = map[lang] || map.en;
+  return m[key] || map.it[key] || key;
+}
 
   function renderLabels() {
+    
     if (titleEl) titleEl.textContent = t('title');
     if (langLabel) langLabel.textContent = t('labelLanguage');
+    if (modeLabel) modeLabel.textContent = t('labelMode');
     if (btnSidebar) btnSidebar.textContent = t('btnImportSidebar');
     if (btnThread) btnThread.textContent = t('btnImportThread');
     if (openPanelBtn) openPanelBtn.textContent = t('btnOpenPanel');
@@ -710,6 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnSmartInterested.textContent = t('btnSmartInterested');
     if (btnSmartMoreInfo)
       btnSmartMoreInfo.textContent = t('btnSmartMoreInfo');
+    if (openRecruiterBtn) openRecruiterBtn.textContent = t('btnOpenRecruiter');
 
     if (threadMetaTitle)
       threadMetaTitle.textContent = t('threadMetaTitle');
@@ -738,11 +992,102 @@ document.addEventListener('DOMContentLoaded', () => {
     if (threadNotesLabel)
       threadNotesLabel.textContent = t('threadMetaNotes');
 
+
+        if (recruiterAssemblerTitle)
+      recruiterAssemblerTitle.textContent = t('recruiterAssemblerTitle');
+
+if (recruiterGreetingSalutationLabel)
+      recruiterGreetingSalutationLabel.textContent = t(
+        'recruiterGreetingSalutation'
+      );
+    if (recruiterGreetingTitleLabel)
+      recruiterGreetingTitleLabel.textContent = t('recruiterGreetingTitle');
+    if (recruiterGreetingNameModeLabel)
+      recruiterGreetingNameModeLabel.textContent = t(
+        'recruiterGreetingNameMode'
+      );
+
+          // localizza le option dei select recruiter
+    if (recruiterGreetingSalutationSelect) {
+      Array.from(recruiterGreetingSalutationSelect.options).forEach((opt) => {
+        opt.textContent = getSalutationLabel(HERMES_LANG, opt.value);
+      });
+    }
+
+    if (recruiterGreetingTitleSelect) {
+      Array.from(recruiterGreetingTitleSelect.options).forEach((opt) => {
+        opt.textContent = getTitleLabel(HERMES_LANG, opt.value);
+      });
+    }
+
+    if (recruiterGreetingNameModeSelect) {
+      Array.from(recruiterGreetingNameModeSelect.options).forEach((opt) => {
+        opt.textContent = getNameModeLabel(HERMES_LANG, opt.value);
+      });
+    }
+
+
+
+    if (recruiterCompanyLabel)
+      recruiterCompanyLabel.textContent = t('recruiterCompany');
+    if (recruiterRoleLabel)
+      recruiterRoleLabel.textContent = t('recruiterRole');
+    if (recruiterWorkmodeLabel)
+      recruiterWorkmodeLabel.textContent = t('recruiterWorkmode');
+    if (recruiterContractLabel)
+      recruiterContractLabel.textContent = t('recruiterContract');
+    if (recruiterRecruiterLabel)
+      recruiterRecruiterLabel.textContent = t('recruiterRecruiter');
+    if (recruiterNotesLabel)
+      recruiterNotesLabel.textContent = t('recruiterNotes');
+
+    if (recruiterAssembledTitle)
+      recruiterAssembledTitle.textContent = t('recruiterAssembledTitle');
+    if (recruiterGenerateBtn)
+      recruiterGenerateBtn.textContent = t('recruiterBtnGenerate');
+
+
     if (langSelect) {
       langSelect.value = HERMES_LANG;
     }
     if (footer) footer.textContent = t('footerSignature');
+
+    hideEmptySmartButtons();
+    applyMode();
   }
+
+
+    function applyMode() {
+    const isRecruiter = HERMES_MODE === 'recruiter';
+
+    if (threadMetaSection) {
+      threadMetaSection.style.display = isRecruiter ? 'none' : '';
+    }
+    if (smartSectionTitle) {
+      smartSectionTitle.style.display = isRecruiter ? 'none' : '';
+    }
+    if (smartSectionContainer) {
+      smartSectionContainer.style.display = isRecruiter ? 'none' : '';
+    }
+
+    if (recruiterSection) {
+      recruiterSection.style.display = isRecruiter ? '' : 'none';
+    }
+    if (recruiterAssembledSection) {
+      recruiterAssembledSection.style.display = isRecruiter ? '' : 'none';
+    }
+
+    if (modeSelect) {
+      modeSelect.value = HERMES_MODE;
+      const optDev = modeSelect.querySelector('option[value="dev"]');
+      const optRecruiter = modeSelect.querySelector(
+        'option[value="recruiter"]'
+      );
+      if (optDev) optDev.textContent = t('modeDev');
+      if (optRecruiter) optRecruiter.textContent = t('modeRecruiter');
+    }
+  }
+
 
 function fillThreadMetaForm(parsed) {
   parsed = parsed || {};
@@ -821,7 +1166,7 @@ async function handleSmartReply(mode) {
   setStatus(t('statusSmartPreparing'));
 
   // Carica i template personalizzati (se esistono)
-  const customBodies = await loadCustomBodies();
+  const customBodies = CUSTOM_BODIES || {};
 
   getLinkedinMessagingTab(
     (tab) => {
@@ -846,18 +1191,24 @@ async function handleSmartReply(mode) {
             firstName = match ? match[0] : fullName.split(' ')[0];
           }
 
-          // Template: prima personalizzato, poi default
-          const template = 
-            customBodies?.[HERMES_LANG]?.[mode] ||
-            DEFAULT_BODIES[HERMES_LANG]?.[mode] ||
-            DEFAULT_BODIES.en[mode];
+// Template: prima personalizzato, poi default
+let template =
+  customBodies?.[HERMES_LANG]?.[mode] ||
+  DEFAULT_BODIES[HERMES_LANG]?.[mode] ||
+  DEFAULT_BODIES.en[mode] ||
+  '';
+
+// PULIZIA righe: niente spazi iniziali, niente \n\n
+template = template
+  .replace(/^\s+/, '')    // leva whitespace / newline all'inizio
+  .replace(/\n{2,}/g, '\n'); // comprime 2+ a capo in uno solo
 
           // Costruisci il messaggio SENZA righe vuote inutili
           let replyText = '';
           if (HERMES_LANG === 'it') {
-            replyText = `Ciao ${firstName},\n${template}\nUn saluto,\nStefano`;
+            replyText = `Ciao ${firstName},\n${template}\nUn saluto`;
           } else {
-            replyText = `Hi ${firstName},\n${template}\nBest regards,\nStefano`;
+            replyText = `Hi ${firstName},\n${template}\nBest regards`;
           }
 
           // Inserisci il messaggio
@@ -892,6 +1243,260 @@ async function handleSmartReply(mode) {
     }
   );
 }
+
+
+  function collectRecruiterForm() {
+    return {
+      company:
+        (recruiterCompanyInput && recruiterCompanyInput.value.trim()) || '',
+      role: (recruiterRoleInput && recruiterRoleInput.value.trim()) || '',
+      workmode:
+        (recruiterWorkmodeInput &&
+          recruiterWorkmodeInput.value.trim()) || '',
+      contract:
+        (recruiterContractInput &&
+          recruiterContractInput.value.trim()) || '',
+      recruiter:
+        (recruiterRecruiterInput &&
+          recruiterRecruiterInput.value.trim()) || '',
+      notes:
+        (recruiterNotesTextarea &&
+          recruiterNotesTextarea.value.trim()) || '',
+      includeCompany:
+        !!(recruiterCompanyInclude && recruiterCompanyInclude.checked),
+      includeRole:
+        !!(recruiterRoleInclude && recruiterRoleInclude.checked),
+      includeWorkmode:
+        !!(recruiterWorkmodeInclude && recruiterWorkmodeInclude.checked),
+      includeContract:
+        !!(recruiterContractInclude && recruiterContractInclude.checked),
+      includeRecruiter:
+        !!(recruiterRecruiterInclude && recruiterRecruiterInclude.checked),
+      includeNotes:
+        !!(recruiterNotesInclude && recruiterNotesInclude.checked),
+
+// nuovi campi per il saluto
+      greetingSalutation:
+        (recruiterGreetingSalutationSelect &&
+          recruiterGreetingSalutationSelect.value) || '',
+      greetingTitle:
+        (recruiterGreetingTitleSelect &&
+          recruiterGreetingTitleSelect.value) || '',
+      greetingNameMode:
+        (recruiterGreetingNameModeSelect &&
+          recruiterGreetingNameModeSelect.value) || 'first',
+
+    };
+  }
+
+function buildRecruiterMessageText(candidateName, form) {
+  const lang = HERMES_LANG;
+  const template = getRecruiterBody(lang) || '';
+
+  // placeholder "semplici"
+  const basePlaceholders = {
+    candidate: candidateName || '',
+    recruiter: form.recruiter || '',
+    company: form.includeCompany ? form.company : '',
+    role: form.includeRole ? form.role : '',
+    workmode: form.includeWorkmode ? form.workmode : '',
+    contract: form.includeContract ? form.contract : '',
+    locations: form.includeLocations ? form.locations : '',
+    notes: form.includeNotes ? form.notes : '',
+  };
+
+  // blocchi frasali opzionali (con spazi / virgole già inclusi)
+  const blocks = {
+    company_block: '',
+    role_block: '',
+    workmode_block: '',
+    contract_block: '',
+    locations_block: '',
+  };
+
+  if (lang === 'it') {
+    if (form.includeCompany && form.company) {
+      blocks.company_block = ` per conto di ${form.company}`;
+    }
+    if (form.includeRole && form.role) {
+      blocks.role_block = ` per una posizione come ${form.role}`;
+    }
+    if (form.includeWorkmode && form.workmode) {
+      blocks.workmode_block = `, in modalità ${form.workmode}`;
+    }
+    if (form.includeContract && form.contract) {
+      blocks.contract_block = `, contratto: ${form.contract}`;
+    }
+    if (form.includeLocations && form.locations) {
+      blocks.locations_block = `, con sede ${form.locations}`;
+    }
+  } else {
+    if (form.includeCompany && form.company) {
+      blocks.company_block = ` on behalf of ${form.company}`;
+    }
+    if (form.includeRole && form.role) {
+      blocks.role_block = `, regarding a ${form.role} position`;
+    }
+    if (form.includeWorkmode && form.workmode) {
+      blocks.workmode_block = `, in workmode ${form.workmode}`;
+    }
+    if (form.includeContract && form.contract) {
+      blocks.contract_block = `, contract: ${form.contract}`;
+    }
+    if (form.includeLocations && form.locations) {
+      blocks.locations_block = `, location: ${form.locations}`;
+    }
+  }
+
+  const placeholders = {
+    ...basePlaceholders,
+    ...blocks,
+  };
+
+  let body = template;
+  Object.keys(placeholders).forEach((key) => {
+    const re = new RegExp('\\{' + key + '\\}', 'g');
+    body = body.replace(re, placeholders[key] || '');
+  });
+
+  body = body
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\s+\n/g, '\n')
+    .trim();
+
+  let greeting = '';
+  let closing = '';
+
+  // saluto di default per lingua
+  const defaultSalutation = lang === 'it' ? 'Ciao' : 'Hi';
+  const salutation =
+    (form && form.greetingSalutation) || defaultSalutation;
+  const title = (form && form.greetingTitle) || '';
+  const nameMode = (form && form.greetingNameMode) || 'first';
+
+  const fullName = (candidateName || '').trim();
+  let firstName = '';
+  let lastName = '';
+
+  if (fullName) {
+    const parts = fullName.split(/\s+/);
+    firstName = parts[0];
+    lastName = parts.length > 1 ? parts[parts.length - 1] : '';
+  }
+
+  let nameForGreeting = '';
+  if (fullName) {
+    if (nameMode === 'last' && lastName) {
+      nameForGreeting = lastName;
+    } else if (nameMode === 'full') {
+      nameForGreeting = fullName;
+    } else {
+      // 'first' o fallback
+      nameForGreeting = firstName || fullName;
+    }
+  }
+
+  const titlePart = title ? ` ${title}` : '';
+  const namePart = nameForGreeting ? ` ${nameForGreeting}` : '';
+
+  if (fullName) {
+    greeting = `${salutation}${titlePart}${namePart},\n\n`;
+  } else {
+    // se non abbiamo il nome niente titolo / cognome
+    greeting = `${salutation},\n\n`;
+  }
+
+  if (lang === 'it') {
+    closing = '\n\nUn saluto,\n' + (form.recruiter || '');
+  } else {
+    closing = '\n\nBest regards,\n' + (form.recruiter || '');
+  }
+
+  return `${greeting}${body}${closing}`;
+}
+
+
+  function handleRecruiterGenerate() {
+    setStatus(t('statusRecruiterPreparing'));
+
+    getLinkedinMessagingTab(
+      (tab) => {
+        chrome.tabs.sendMessage(
+          tab.id,
+          { type: 'HERMES_GET_INTERLOCUTOR_NAME' },
+          (response) => {
+            const err = chrome.runtime.lastError;
+            if (err) {
+              console.warn(
+                '[Hermes] Errore richiesta interlocutore (recruiter):',
+                err.message
+              );
+            }
+
+            const name =
+              response && typeof response.interlocutorName === 'string'
+                ? response.interlocutorName.trim()
+                : null;
+
+            const form = collectRecruiterForm();
+            const replyText = buildRecruiterMessageText(name, form);
+
+            chrome.tabs.sendMessage(
+              tab.id,
+              { type: 'HERMES_INSERT_REPLY', replyText },
+              (res2) => {
+                const err2 = chrome.runtime.lastError;
+                if (err2) {
+                  console.warn(
+                    '[Hermes] Errore inserimento messaggio recruiter:',
+                    err2.message
+                  );
+                }
+
+                const ok = res2 && res2.ok;
+
+                if (ok) {
+                  if (name) {
+                    setStatus(
+                      t('statusRecruiterInsertedNamed', name)
+                    );
+                  } else {
+                    setStatus(t('statusRecruiterInsertedNoName'));
+                  }
+                } else {
+                  const copied = copyToClipboard(replyText);
+                  if (copied) {
+                    setStatus(t('statusRecruiterClipboardFallback'));
+                  } else {
+                    setStatus('');
+                  }
+                }
+              }
+            );
+          }
+        );
+      },
+      (msg) => {
+        setStatus(msg);
+      }
+    );
+  }
+
+  function handleEditRecruiterTemplate() {
+    const url =
+      'editor.html?mode=' +
+      encodeURIComponent('recruiter_message') +
+      '&lang=' +
+      encodeURIComponent(HERMES_LANG);
+
+    chrome.windows.create({
+      url,
+      type: 'popup',
+      width: 520,
+      height: 420,
+    });
+  }
+
 
   // =============== Event handlers ===================
 
@@ -1000,6 +1605,16 @@ fillThreadMetaForm(parsed);
       });
     });
   }
+  if (openRecruiterBtn) {
+    openRecruiterBtn.addEventListener('click', () => {
+      chrome.windows.create({
+        url: 'recruiter.html',
+        type: 'popup',
+        width: 420,
+        height: 640,
+      });
+    });
+  }
 
   if (btnSmartDecline) {
     btnSmartDecline.addEventListener('click', () => {
@@ -1051,6 +1666,19 @@ function handleEditSmartBody(mode) {
     });
   }
 
+    // --- Recruiter mode: pulsanti in fondo ---
+  if (recruiterGenerateBtn) {
+    recruiterGenerateBtn.addEventListener('click', () => {
+      handleRecruiterGenerate();
+    });
+  }
+
+  if (recruiterEditTemplateBtn) {
+    recruiterEditTemplateBtn.addEventListener('click', () => {
+      handleEditSmartBody('recruiter_message');
+    });
+  }
+
   if (langSelect) {
     langSelect.addEventListener('change', () => {
       HERMES_LANG = langSelect.value === 'it' ? 'it' : 'en';
@@ -1060,15 +1688,51 @@ function handleEditSmartBody(mode) {
     });
   }
 
-  chrome.storage.sync.get(['hermesLang'], (res) => {
+
+    if (modeSelect) {
+    modeSelect.addEventListener('change', () => {
+      HERMES_MODE =
+        modeSelect.value === 'recruiter' ? 'recruiter' : 'dev';
+      chrome.storage.sync.set({ hermesMode: HERMES_MODE }, () => {
+        applyMode();
+      });
+    });
+  }
+
+
+
+  function hideEmptySmartButtons() {
+  const rows = document.querySelectorAll('.smart-row');
+  rows.forEach(row => {
+    const btn = row.querySelector('button');
+    if (btn && btn.textContent.trim().length === 0) {
+      row.style.display = 'none';
+    }
+  });
+}
+
+
+  chrome.storage.sync.get(['hermesLang', 'hermesMode'], (res) => {
     if (res && res.hermesLang && HERMES_I18N[res.hermesLang]) {
       HERMES_LANG = res.hermesLang;
     } else {
       HERMES_LANG = detectDefaultLang();
     }
 
+    if (res && typeof res.hermesMode === 'string') {
+      HERMES_MODE =
+        res.hermesMode === 'recruiter' ? 'recruiter' : 'dev';
+    } else {
+      HERMES_MODE = 'dev';
+    }
+
     loadCustomBodies(() => {
       renderLabels();
     });
   });
+
+
+
+
+
 });
