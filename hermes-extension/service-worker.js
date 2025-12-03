@@ -55,98 +55,81 @@ function parseDayMonthYear(dayStr, monthStr, yearStr) {
   return d;
 }
 
-function normalizeLinkedinTimestamp(rawTimestamp) {
+function normalizeLinkedinTimestamp(rawLabel) {
+  if (!rawLabel) return null;
+
   const now = new Date();
+  const currentYear = now.getFullYear();
 
-  if (!rawTimestamp) {
-    return now.toISOString();
+  let label = rawLabel.trim().toLowerCase();
+
+  // LinkedIn a volte ripete tipo "17 ott 17 ott" → tolgo duplicati consecutivi
+  const parts = label.split(/\s+/);
+  const dedup = [];
+  for (const p of parts) {
+    if (dedup.length === 0 || dedup[dedup.length - 1] !== p) {
+      dedup.push(p);
+    }
+  }
+  label = dedup.join(' ');
+
+  // ---- CASO 1: solo orario "HH:mm" => oggi a quell'ora ----
+  const timeOnlyMatch = label.match(/^(\d{1,2}):(\d{2})$/);
+  if (timeOnlyMatch) {
+    const h = parseInt(timeOnlyMatch[1], 10);
+    const m = parseInt(timeOnlyMatch[2], 10);
+    if (!Number.isNaN(h) && !Number.isNaN(m)) {
+      const d = new Date(now);
+      d.setHours(h, m, 0, 0);
+      return d.toISOString();
+    }
   }
 
-  const trimmed = String(rawTimestamp).trim();
+  // Normalizzo la parte "17 ott" / "6 apr 2023"
+  const tokens = label.split(/\s+/);
+  if (tokens.length >= 2) {
+    const day = parseInt(tokens[0], 10);
+    if (!Number.isNaN(day)) {
+      // prendo le prime 3 lettere del mese senza accenti
+      const monthRaw = tokens[1]
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // rimuove accenti
+        .slice(0, 3);
+      const monthIndex = MONTH_INDEX_BY_3[monthRaw];
 
-  // 1) Caso migliore: LinkedIn dà un ISO completo in datetime
-  if (/^\d{4}-\d{2}-\d{2}T/.test(trimmed)) {
-    return trimmed;
+      if (monthIndex != null) {
+        let year = currentYear;
+
+        // CASO 2: "17 ott 2024"
+        if (tokens.length >= 3 && /^\d{4}$/.test(tokens[2])) {
+          year = parseInt(tokens[2], 10);
+        }
+
+        const d = new Date();
+        d.setFullYear(year, monthIndex, day);
+        // se non ho orario specifico, metto mezzanotte
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString();
+      }
+    }
   }
 
-  // 2) Solo ora tipo "10:35" o "9.05"
-  const timeMatch = trimmed.match(/^(\d{1,2})[:.](\d{2})$/);
-  if (timeMatch) {
-    const hh = parseInt(timeMatch[1], 10);
-    const mm = parseInt(timeMatch[2], 10);
-
-    const d = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      hh,
-      mm,
-      0,
-      0
-    );
-    return d.toISOString();
-  }
-
-  // 3) "oggi" / "today" / "ieri" / "yesterday"
-  if (/^oggi$/i.test(trimmed) || /^today$/i.test(trimmed)) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return d.toISOString();
-  }
-
-  if (/^ieri$/i.test(trimmed) || /^yesterday$/i.test(trimmed)) {
-    const d = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 1
-    );
-    return d.toISOString();
-  }
-
-  // 4) Pattern tipo "6 apr 2023" o "6 aprile 2023"
-  let m = trimmed.match(/^(\d{1,2})\s+([^\s]+)\s+(\d{4})$/);
-  if (m) {
-    const parsed = parseDayMonthYear(m[1], m[2], m[3]);
-    if (parsed) return parsed.toISOString();
-  }
-
-  // 5) Pattern tipo "6 apr" o "6 aprile" (assumo anno corrente)
-  m = trimmed.match(/^(\d{1,2})\s+([^\s]+)$/);
-  if (m) {
-    const parsed = parseDayMonthYear(m[1], m[2], null);
-    if (parsed) return parsed.toISOString();
-  }
-
-  // 6) Pattern inglese "Nov 20" o "Nov 20 2023"
-  m = trimmed.match(/^([A-Za-z]+)\s+(\d{1,2})(?:\s+(\d{4}))?$/);
-  if (m) {
-    const monthStr = m[1];
-    const dayStr = m[2];
-    const yearStr = m[3] || null;
-    const parsed = parseDayMonthYear(dayStr, monthStr, yearStr);
-    if (parsed) return parsed.toISOString();
-  }
-
-  // 7) Tentativo generico (ultimissimo fallback)
-  const parsedGeneric = new Date(trimmed);
-  if (!isNaN(parsedGeneric.getTime())) {
-    return parsedGeneric.toISOString();
-  }
-
-  // 8) Fallback definitivo: ora di import
-  return now.toISOString();
+  return null;
 }
+
 
 /* ============================================================
    MAPPATURA ITEM SIDEBAR → DTO BACKEND
    ============================================================ */
-
+   
 function mapSidebarItemToMessageDto(item) {
-  const receivedAtIso = normalizeLinkedinTimestamp(item?.timestamp);
+  // usa il campo giusto: timestampLabel, non "timestamp"
+  const receivedAtIso = normalizeLinkedinTimestamp(item?.timestampLabel);
 
   return {
     id: null,
     senderName: item.sender || '(sconosciuto)',
-    senderProfileUrl: item.senderProfileUrl || '', // 👈 ADESSO USA IL VALORE DELLA SIDEBAR
+    senderProfileUrl: item.senderProfileUrl || '',
     snippet: item.snippet || item.fullText || '',
     receivedAt: receivedAtIso,
     priority: 'LOW',
@@ -156,6 +139,7 @@ function mapSidebarItemToMessageDto(item) {
     threadUrl: item.threadUrl || null,
   };
 }
+
 
 /* ============================================================
    INVIO MASSIVO SIDEBAR
